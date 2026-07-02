@@ -1,0 +1,34 @@
+export interface OrderLineItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  postcardWanted?: boolean;
+  postcardText?: string;
+  addons?: {
+    balloons?: number;
+    toys?: number;
+    vases?: number;
+  };
+}
+
+export interface Order {
+  id: string;
+  customer_name: string;
+  phone: string;
+  recipient_name?: string | null;
+  recipient_phone?: string | null;
+  recipient_address?: string | null;
+  special_wishes?: string | null;
+  street?: string | null;
+  house?: string | null;
+  pickup_store?: string | null;
+  delivery_method: 'courier' | 'pickup';
+  delivery_time?: string | null;
+  items: OrderLineItem[];
+  items_total: number;
+  delivery_cost: number;
+  total: number;
+  status: 'new' | 'processing' | 'completed' | 'cancelled';
+  created_at?: string;
+}

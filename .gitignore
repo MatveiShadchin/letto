@@ -1,0 +1,29 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+/dist/
+
+# env
+.env
+.env.local
+.env*.local
+
+# debug
+npm-debug.log*
+
+# misc
+.DS_Store
+*.pem
+*.tgz
+*.rar
+*.zip
+letto-clean.tgz
+
+# uploaded product photos (keep folder via .gitkeep)
+/public/uploads/products/*
+!/public/uploads/products/.gitkeep

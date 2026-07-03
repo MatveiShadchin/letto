@@ -4,18 +4,32 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PostcardDialog } from '@/components/PostcardDialog';
+import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 import { ProductImage } from '@/components/ProductImage';
 import { formatCourierDeliveryHint } from '@/lib/delivery';
-import { EMPTY_ADDONS, formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
+import { formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
 
 export default function CartPage() {
   const router = useRouter();
   const { state, removeFromCart, updateQuantity, clearCart, setOrderPostcard } = useCart();
-  const [postcardOpen, setPostcardOpen] = useState(false);
+  const [postcardError, setPostcardError] = useState<string | null>(null);
   const deliveryHint = formatCourierDeliveryHint(state.total);
+
+  const handleCheckout = () => {
+    if (!isPostcardValid(state.orderPostcard)) {
+      if (state.orderPostcard?.wanted) {
+        setPostcardError('Укажите текст на открытке');
+      } else {
+        setPostcardError('Выберите, нужна ли открытка к букету');
+      }
+      return;
+    }
+
+    setPostcardError(null);
+    router.push('/checkout');
+  };
 
   if (state.items.length === 0) {
     return (
@@ -46,7 +60,7 @@ export default function CartPage() {
             <div className="bg-white rounded-2xl border border-[#E8E4E0] p-6 shadow-sm">
               <div className="space-y-6">
                 {state.items.map((item) => (
-                  <div key={item.cartKey} className="flex items-center border-b border-[#F3F2F1] pb-6 last:border-0 last:pb-0">
+                  <div key={item.cartKey} className="flex items-center border-b border-[#F3F2F1] pb-6">
                     <div className="w-24 h-24 bg-[#F9F5F0] rounded-xl mr-4 flex-shrink-0 relative overflow-hidden">
                       <ProductImage
                         src={item.image_url}
@@ -109,6 +123,19 @@ export default function CartPage() {
                 ))}
               </div>
 
+              <PostcardSection
+                className="mt-6"
+                value={state.orderPostcard}
+                onChange={(postcard) => {
+                  setPostcardError(null);
+                  setOrderPostcard(postcard);
+                }}
+              />
+
+              {postcardError && (
+                <p className="mt-3 text-sm text-red-600">{postcardError}</p>
+              )}
+
               <div className="mt-6 pt-6 border-t border-[#F3F2F1]">
                 <Button
                   variant="outline"
@@ -154,24 +181,10 @@ export default function CartPage() {
               <Button
                 variant="brand"
                 className="w-full rounded-xl mb-4"
-                onClick={() => setPostcardOpen(true)}
+                onClick={handleCheckout}
               >
                 Перейти к оформлению
               </Button>
-
-              <PostcardDialog
-                open={postcardOpen}
-                onOpenChange={setPostcardOpen}
-                baseExtras={{ addons: { ...EMPTY_ADDONS } }}
-                confirmLabel="Перейти к оформлению"
-                onConfirm={(extras) => {
-                  setOrderPostcard({
-                    wanted: extras.postcardWanted,
-                    text: extras.postcardText,
-                  });
-                  router.push('/checkout');
-                }}
-              />
 
               <p className="text-sm text-[#1A1A1A]/50 text-center">
                 Нажимая кнопку, вы соглашаетесь с условиями обработки персональных данных

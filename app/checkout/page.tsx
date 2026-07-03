@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ProductImage } from '@/components/ProductImage';
-import { PostcardDialog } from '@/components/PostcardDialog';
+import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
 import { apiJson } from '@/lib/api-client';
-import { EMPTY_ADDONS, formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
+import { formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
 import {
   calcDeliveryCostRubles,
   formatDeliveryLine,
@@ -20,8 +20,6 @@ export default function CheckoutPage() {
   const { state, clearCart, setOrderPostcard } = useCart();
   const [deliveryMethod, setDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
   const [pickupStoreId, setPickupStoreId] = useState<PickupStoreId>(PICKUP_STORES[0].id);
-  const [postcardOpen, setPostcardOpen] = useState(false);
-  const [pendingSubmit, setPendingSubmit] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -98,7 +96,6 @@ export default function CheckoutPage() {
       setError(err instanceof Error ? err.message : 'Не удалось оформить заказ');
     } finally {
       setSubmitting(false);
-      setPendingSubmit(false);
     }
   };
 
@@ -144,9 +141,12 @@ export default function CheckoutPage() {
       }
     }
 
-    if (state.orderPostcard === null) {
-      setPendingSubmit(true);
-      setPostcardOpen(true);
+    if (!isPostcardValid(state.orderPostcard)) {
+      if (state.orderPostcard?.wanted) {
+        setError('Укажите текст на открытке');
+      } else {
+        setError('Выберите, нужна ли открытка к букету');
+      }
       return;
     }
 
@@ -391,6 +391,11 @@ export default function CheckoutPage() {
               </>
             )}
 
+            <PostcardSection
+              value={state.orderPostcard}
+              onChange={setOrderPostcard}
+            />
+
             <div className="rounded-2xl border border-[#E8E4E0] bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-[#1A1A1A] mb-4">Особые пожелания</h2>
               <textarea
@@ -473,26 +478,6 @@ export default function CheckoutPage() {
             </div>
           </div>
         </form>
-
-        <PostcardDialog
-          open={postcardOpen}
-          onOpenChange={(open) => {
-            setPostcardOpen(open);
-            if (!open) setPendingSubmit(false);
-          }}
-          baseExtras={{ addons: { ...EMPTY_ADDONS } }}
-          confirmLabel="Подтвердить заказ"
-          onConfirm={async (extras) => {
-            const postcard = {
-              wanted: extras.postcardWanted,
-              text: extras.postcardText,
-            };
-            setOrderPostcard(postcard);
-            if (pendingSubmit) {
-              await submitOrder(postcard);
-            }
-          }}
-        />
       </div>
     </div>
   );

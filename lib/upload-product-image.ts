@@ -40,16 +40,22 @@ export async function uploadProductImage(file: File): Promise<string> {
     );
   }
 
-  let data: { url?: string; error?: string };
+  let data: { url?: string; error?: string } = {};
   try {
     data = await response.json();
   } catch {
+    if (response.status === 413) {
+      throw new Error('Фото слишком большое для сервера. Сожмите до 5 МБ или выберите другое.');
+    }
     throw new Error('Сервер вернул некорректный ответ. Попробуйте другое фото.');
   }
 
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error('Сессия админки истекла. Выйдите и войдите снова, затем загрузите фото.');
+    }
+    if (response.status === 413) {
+      throw new Error('Фото слишком большое для сервера. Сожмите до 5 МБ или выберите другое.');
     }
     throw new Error(data.error || 'Не удалось загрузить фото');
   }

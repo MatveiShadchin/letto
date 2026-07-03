@@ -68,11 +68,11 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
 
     try {
       const url = await uploadProductImage(file);
+      URL.revokeObjectURL(preview);
       setImageUrl(url);
       setImagePreview(url);
     } catch (err) {
       setImageUrl('');
-      setImagePreview('');
       setError(err instanceof Error ? err.message : 'Не удалось загрузить фото');
     } finally {
       setUploading(false);

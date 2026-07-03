@@ -1,15 +1,20 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ShoppingBag, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PostcardDialog } from '@/components/PostcardDialog';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 import { ProductImage } from '@/components/ProductImage';
 import { formatCourierDeliveryHint } from '@/lib/delivery';
-import { formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
+import { EMPTY_ADDONS, formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
 
 export default function CartPage() {
-  const { state, removeFromCart, updateQuantity, clearCart } = useCart();
+  const router = useRouter();
+  const { state, removeFromCart, updateQuantity, clearCart, setOrderPostcard } = useCart();
+  const [postcardOpen, setPostcardOpen] = useState(false);
   const deliveryHint = formatCourierDeliveryHint(state.total);
 
   if (state.items.length === 0) {
@@ -54,11 +59,6 @@ export default function CartPage() {
                     <div className="flex-1">
                       <h3 className="font-semibold text-[#1A1A1A] mb-1">{item.name}</h3>
                       <p className="text-sm text-[#1A1A1A]/60 mb-1 line-clamp-2">{item.description}</p>
-                      {item.postcardWanted && (
-                        <p className="text-xs text-[#5E4037]/85 mb-1">
-                          Открытка: «{item.postcardText}»
-                        </p>
-                      )}
                       {hasAddons(item.addons) && (
                         <p className="text-xs text-[#1A1A1A]/50 mb-2">
                           {formatAddonsSummary(item.addons)}
@@ -140,17 +140,38 @@ export default function CartPage() {
                     <span className="text-[#1A1A1A]">К оплате</span>
                     <span className="text-[#5E4037]">{(state.total / 100).toFixed(0)} ₽</span>
                   </div>
+                  {state.orderPostcard?.wanted && (
+                    <p className="text-xs text-[#5E4037]/85 mt-2">
+                      Открытка: «{state.orderPostcard.text}»
+                    </p>
+                  )}
                   <p className="text-xs text-[#1A1A1A]/50 mt-2">
                     Итог с доставкой рассчитается при оформлении
                   </p>
                 </div>
               </div>
 
-              <Link href="/checkout">
-                <Button variant="brand" className="w-full rounded-xl mb-4">
-                  Перейти к оформлению
-                </Button>
-              </Link>
+              <Button
+                variant="brand"
+                className="w-full rounded-xl mb-4"
+                onClick={() => setPostcardOpen(true)}
+              >
+                Перейти к оформлению
+              </Button>
+
+              <PostcardDialog
+                open={postcardOpen}
+                onOpenChange={setPostcardOpen}
+                baseExtras={{ addons: { ...EMPTY_ADDONS } }}
+                confirmLabel="Перейти к оформлению"
+                onConfirm={(extras) => {
+                  setOrderPostcard({
+                    wanted: extras.postcardWanted,
+                    text: extras.postcardText,
+                  });
+                  router.push('/checkout');
+                }}
+              />
 
               <p className="text-sm text-[#1A1A1A]/50 text-center">
                 Нажимая кнопку, вы соглашаетесь с условиями обработки персональных данных

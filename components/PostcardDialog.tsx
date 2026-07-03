@@ -18,6 +18,7 @@ interface PostcardDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: (extras: CartItemExtras) => void;
   baseExtras: Omit<CartItemExtras, 'postcardWanted' | 'postcardText'>;
+  confirmLabel?: string;
 }
 
 export function PostcardDialog({
@@ -25,6 +26,7 @@ export function PostcardDialog({
   onOpenChange,
   onConfirm,
   baseExtras,
+  confirmLabel = 'Продолжить',
 }: PostcardDialogProps) {
   const [wantsPostcard, setWantsPostcard] = useState<boolean | null>(null);
   const [postcardText, setPostcardText] = useState('');
@@ -50,7 +52,7 @@ export function PostcardDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md rounded-2xl border-[#F3F2F1]">
+      <DialogContent className="sm:max-w-md rounded-2xl border-[#F3F2F1] bg-white shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-[#1A1A1A]">Бесплатная открытка</DialogTitle>
           <DialogDescription className="text-[#1A1A1A]/65">
@@ -106,7 +108,7 @@ export function PostcardDialog({
                 disabled={!postcardText.trim()}
                 onClick={() => finish(true)}
               >
-                Добавить в корзину
+                {confirmLabel}
               </Button>
             </DialogFooter>
           </div>

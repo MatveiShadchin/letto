@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ShoppingCart, X } from 'lucide-react';
 import { Button } from './ui/button';
-import { PostcardDialog } from './PostcardDialog';
 import { useCart } from '@/contexts/CartContext';
 import { ProductImage } from './ProductImage';
-import { EMPTY_ADDONS } from '@/lib/cart-extras';
+import { DEFAULT_CART_EXTRAS } from '@/lib/cart-extras';
 import { getRecommendationTitle, getRecommendedProducts } from '@/lib/product-recommendations';
 import { Product } from '@/types/product';
 
@@ -23,8 +22,6 @@ export function ProductModal({
 }) {
   const { addToCart } = useCart();
   const [allProducts, setAllProducts] = useState<Product[]>(catalogProducts ?? []);
-  const [postcardOpen, setPostcardOpen] = useState(false);
-  const [postcardProduct, setPostcardProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -57,13 +54,7 @@ export function ProductModal({
 
   const formattedPrice = product?.price ? (product.price / 100).toFixed(0) + ' ₽' : '0 ₽';
 
-  const openPostcardFor = (item: Product) => {
-    setPostcardProduct(item);
-    setPostcardOpen(true);
-  };
-
   const handleClose = () => {
-    setPostcardProduct(null);
     onClose();
   };
 
@@ -128,7 +119,7 @@ export function ProductModal({
 
               <div className="mt-auto pt-2">
                 <Button
-                  onClick={() => openPostcardFor(product)}
+                  onClick={() => addToCart(product, DEFAULT_CART_EXTRAS)}
                   variant="brand"
                   className="w-full h-12 rounded-xl font-semibold antialiased"
                 >
@@ -168,7 +159,7 @@ export function ProductModal({
                         variant="outline"
                         size="sm"
                         className="mt-auto h-8 rounded-lg text-xs border-[#E8E4E0] hover:bg-white"
-                        onClick={() => openPostcardFor(item)}
+                        onClick={() => addToCart(item, DEFAULT_CART_EXTRAS)}
                       >
                         В корзину
                       </Button>
@@ -180,21 +171,6 @@ export function ProductModal({
           )}
         </div>
       </div>
-
-      <PostcardDialog
-        open={postcardOpen}
-        onOpenChange={(open) => {
-          setPostcardOpen(open);
-          if (!open) setPostcardProduct(null);
-        }}
-        baseExtras={{ addons: { ...EMPTY_ADDONS } }}
-        onConfirm={(extras) => {
-          if (postcardProduct) {
-            addToCart(postcardProduct, extras);
-          }
-          setPostcardProduct(null);
-        }}
-      />
     </>
   );
 }

@@ -4,10 +4,9 @@ import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { Button } from './ui/button';
 import { ProductModal } from './ProductModal';
-import { PostcardDialog } from './PostcardDialog';
 import { useCart } from '@/contexts/CartContext';
 import { ProductImage } from './ProductImage';
-import { EMPTY_ADDONS } from '@/lib/cart-extras';
+import { DEFAULT_CART_EXTRAS } from '@/lib/cart-extras';
 import { Product } from '@/types/product';
 
 export function ProductCard({
@@ -20,7 +19,6 @@ export function ProductCard({
   catalogProducts?: Product[];
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [postcardOpen, setPostcardOpen] = useState(false);
   const { addToCart } = useCart();
 
   if (!product) return null;
@@ -51,7 +49,7 @@ export function ProductCard({
           <div className="mt-auto px-1">
             <div className="flex gap-2">
               <Button
-                onClick={() => setPostcardOpen(true)}
+                onClick={() => addToCart(product, DEFAULT_CART_EXTRAS)}
                 variant="brand"
                 className="flex-1 h-10 rounded-xl font-medium tracking-tight antialiased text-sm"
               >
@@ -70,13 +68,6 @@ export function ProductCard({
           </div>
         </div>
       </div>
-
-      <PostcardDialog
-        open={postcardOpen}
-        onOpenChange={setPostcardOpen}
-        baseExtras={{ addons: { ...EMPTY_ADDONS } }}
-        onConfirm={(extras) => addToCart(product, extras)}
-      />
 
       <ProductModal
         product={product}

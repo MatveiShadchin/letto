@@ -2,13 +2,14 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { DEFAULT_CART_EXTRAS, makeCartKey } from '@/lib/cart-extras';
-import { CartItem, CartItemExtras, CartState, Product } from '@/types/product';
+import { CartItem, CartItemExtras, CartState, OrderPostcard, Product } from '@/types/product';
 
 interface CartContextType {
   state: CartState;
   addToCart: (product: Product, extras?: CartItemExtras) => void;
   removeFromCart: (cartKey: string) => void;
   updateQuantity: (cartKey: string, quantity: number) => void;
+  setOrderPostcard: (postcard: OrderPostcard) => void;
   clearCart: () => void;
 }
 
@@ -18,6 +19,7 @@ type CartAction =
   | { type: 'ADD_TO_CART'; payload: { product: Product; extras: CartItemExtras } }
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { cartKey: string; quantity: number } }
+  | { type: 'SET_ORDER_POSTCARD'; payload: OrderPostcard }
   | { type: 'CLEAR_CART' };
 
 function calcTotals(items: CartItem[]) {
@@ -69,8 +71,11 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return { ...state, items: updatedItems, ...calcTotals(updatedItems) };
     }
 
+    case 'SET_ORDER_POSTCARD':
+      return { ...state, orderPostcard: action.payload };
+
     case 'CLEAR_CART':
-      return { items: [], total: 0, itemCount: 0 };
+      return { items: [], total: 0, itemCount: 0, orderPostcard: null };
 
     default:
       return state;
@@ -81,6 +86,7 @@ const initialState: CartState = {
   items: [],
   total: 0,
   itemCount: 0,
+  orderPostcard: null,
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -98,12 +104,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { cartKey, quantity } });
   };
 
+  const setOrderPostcard = (postcard: OrderPostcard) => {
+    dispatch({ type: 'SET_ORDER_POSTCARD', payload: postcard });
+  };
+
   const clearCart = () => {
     dispatch({ type: 'CLEAR_CART' });
   };
 
   return (
-    <CartContext.Provider value={{ state, addToCart, removeFromCart, updateQuantity, clearCart }}>
+    <CartContext.Provider
+      value={{ state, addToCart, removeFromCart, updateQuantity, setOrderPostcard, clearCart }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -38,8 +38,14 @@ export interface CartItem extends Product {
   addons: CartAddons;
 }
 
+export interface OrderPostcard {
+  wanted: boolean;
+  text: string;
+}
+
 export interface CartState {
   items: CartItem[];
   total: number;
   itemCount: number;
+  orderPostcard: OrderPostcard | null;
 }

@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ProductImage } from '@/components/ProductImage';
+import { PostcardDialog } from '@/components/PostcardDialog';
 import { useCart } from '@/contexts/CartContext';
 import { apiJson } from '@/lib/api-client';
-import { formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
+import { EMPTY_ADDONS, formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
 import {
   calcDeliveryCostRubles,
   formatDeliveryLine,
@@ -13,11 +14,14 @@ import {
 } from '@/lib/delivery';
 import { PICKUP_STORES, PickupStoreId } from '@/lib/store-locations';
 import { cn } from '@/lib/utils';
+import { OrderPostcard } from '@/types/product';
 
 export default function CheckoutPage() {
-  const { state, clearCart } = useCart();
+  const { state, clearCart, setOrderPostcard } = useCart();
   const [deliveryMethod, setDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
   const [pickupStoreId, setPickupStoreId] = useState<PickupStoreId>(PICKUP_STORES[0].id);
+  const [postcardOpen, setPostcardOpen] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -49,6 +53,53 @@ export default function CheckoutPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const submitOrder = async (postcardOverride?: OrderPostcard) => {
+    const orderPostcard = postcardOverride ?? state.orderPostcard;
+
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      await apiJson('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: formData.customerName.trim(),
+          phone: formData.customerPhone.trim(),
+          recipient_name: deliveryMethod === 'courier' ? formData.recipientName.trim() : null,
+          recipient_phone: deliveryMethod === 'courier' ? formData.recipientPhone.trim() : null,
+          recipient_address:
+            deliveryMethod === 'courier' ? formData.recipientAddress.trim() : null,
+          special_wishes: formData.specialWishes.trim() || null,
+          pickup_store: deliveryMethod === 'pickup' ? pickupStoreId : null,
+          delivery_method: deliveryMethod,
+          delivery_time: deliveryMethod === 'courier' ? formData.deliveryTime : null,
+          items: state.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            postcardWanted: orderPostcard?.wanted ?? false,
+            postcardText: orderPostcard?.wanted ? orderPostcard.text : '',
+            addons: item.addons,
+          })),
+          items_total: state.total,
+          delivery_cost: deliveryCostRub * 100,
+          total: state.total + deliveryCostRub * 100,
+        }),
+      });
+
+      clearCart();
+      setSuccess(true);
+    } catch (err) {
+      console.error('Ошибка оформления заказа:', err);
+      setError(err instanceof Error ? err.message : 'Не удалось оформить заказ');
+    } finally {
+      setSubmitting(false);
+      setPendingSubmit(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,47 +144,13 @@ export default function CheckoutPage() {
       }
     }
 
-    try {
-      setSubmitting(true);
-      setError(null);
-
-      await apiJson('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer_name: formData.customerName.trim(),
-          phone: formData.customerPhone.trim(),
-          recipient_name: deliveryMethod === 'courier' ? formData.recipientName.trim() : null,
-          recipient_phone: deliveryMethod === 'courier' ? formData.recipientPhone.trim() : null,
-          recipient_address:
-            deliveryMethod === 'courier' ? formData.recipientAddress.trim() : null,
-          special_wishes: formData.specialWishes.trim() || null,
-          pickup_store: deliveryMethod === 'pickup' ? pickupStoreId : null,
-          delivery_method: deliveryMethod,
-          delivery_time: deliveryMethod === 'courier' ? formData.deliveryTime : null,
-          items: state.items.map((item) => ({
-            id: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            postcardWanted: item.postcardWanted,
-            postcardText: item.postcardText,
-            addons: item.addons,
-          })),
-          items_total: state.total,
-          delivery_cost: deliveryCostRub * 100,
-          total: state.total + deliveryCostRub * 100,
-        }),
-      });
-
-      clearCart();
-      setSuccess(true);
-    } catch (err) {
-      console.error('Ошибка оформления заказа:', err);
-      setError(err instanceof Error ? err.message : 'Не удалось оформить заказ');
-    } finally {
-      setSubmitting(false);
+    if (state.orderPostcard === null) {
+      setPendingSubmit(true);
+      setPostcardOpen(true);
+      return;
     }
+
+    await submitOrder();
   };
 
   if (success) {
@@ -409,11 +426,6 @@ export default function CheckoutPage() {
                         <p className="text-xs text-[#1A1A1A]/60">
                           {item.quantity} × {(item.price / 100).toFixed(0)} ₽
                         </p>
-                        {item.postcardWanted && (
-                          <p className="text-xs text-[#5E4037]/80 mt-0.5 truncate">
-                            Открытка: {item.postcardText}
-                          </p>
-                        )}
                         {hasAddons(item.addons) && (
                           <p className="text-xs text-[#1A1A1A]/50 mt-0.5">
                             {formatAddonsSummary(item.addons)}
@@ -427,6 +439,12 @@ export default function CheckoutPage() {
                   </div>
                 ))}
               </div>
+
+              {state.orderPostcard?.wanted && (
+                <p className="text-xs text-[#5E4037]/85 mb-4 rounded-xl bg-[#F9F5F0] px-3 py-2">
+                  Открытка к заказу: «{state.orderPostcard.text}»
+                </p>
+              )}
 
               <div className="space-y-2 border-t border-[#F3F2F1] pt-4">
                 <div className="flex justify-between">
@@ -455,6 +473,26 @@ export default function CheckoutPage() {
             </div>
           </div>
         </form>
+
+        <PostcardDialog
+          open={postcardOpen}
+          onOpenChange={(open) => {
+            setPostcardOpen(open);
+            if (!open) setPendingSubmit(false);
+          }}
+          baseExtras={{ addons: { ...EMPTY_ADDONS } }}
+          confirmLabel="Подтвердить заказ"
+          onConfirm={async (extras) => {
+            const postcard = {
+              wanted: extras.postcardWanted,
+              text: extras.postcardText,
+            };
+            setOrderPostcard(postcard);
+            if (pendingSubmit) {
+              await submitOrder(postcard);
+            }
+          }}
+        />
       </div>
     </div>
   );

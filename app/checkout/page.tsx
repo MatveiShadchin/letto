@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { VkOrderStatusLink } from '@/components/VkOrderStatusLink';
 import { ProductImage } from '@/components/ProductImage';
 import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
@@ -32,6 +33,8 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
+  const [placedPhone, setPlacedPhone] = useState('');
 
   const deliveryCostRub = calcDeliveryCostRubles(state.total, deliveryMethod);
   const itemsTotal = state.total / 100;
@@ -60,7 +63,7 @@ export default function CheckoutPage() {
       setSubmitting(true);
       setError(null);
 
-      await apiJson('/api/orders', {
+      const result = await apiJson<{ id: string }>('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,6 +93,8 @@ export default function CheckoutPage() {
       });
 
       clearCart();
+      setPlacedOrderId(result.id);
+      setPlacedPhone(formData.customerPhone.trim());
       setSuccess(true);
     } catch (err) {
       console.error('Ошибка оформления заказа:', err);
@@ -158,13 +163,20 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-[#FAFAF9]">
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-3xl font-bold text-[#1A1A1A] mb-4">Заказ оформлен</h1>
-          <p className="text-[#1A1A1A]/70 mb-8">Спасибо! Мы свяжемся с вами для подтверждения.</p>
-          <Link
-            href="/catalog"
-            className="inline-block rounded-xl bg-[#5E4037] text-white hover:bg-[#4A3329] hover:text-white px-6 py-3"
-          >
-            Вернуться в каталог
-          </Link>
+          <p className="text-[#1A1A1A]/70 mb-6">Спасибо! Мы свяжемся с вами для подтверждения.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+            <VkOrderStatusLink customerPhone={placedPhone} orderId={placedOrderId} />
+            <Link
+              href="/catalog"
+              className="inline-block rounded-xl border border-[#E8E4E0] bg-white text-[#1A1A1A] hover:bg-[#F9F5F0] px-6 py-3"
+            >
+              Вернуться в каталог
+            </Link>
+          </div>
+          <p className="text-sm text-[#1A1A1A]/55 max-w-md mx-auto">
+            Нажмите кнопку ВКонтакте и отправьте сообщение — мы привяжем чат к заказу и будем
+            присылать статус.
+          </p>
         </div>
       </div>
     );

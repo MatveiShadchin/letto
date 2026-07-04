@@ -1,9 +1,12 @@
+import { getVkCommunityShortLabel, getVkCommunityUrl } from '@/lib/vk-community';
+
 export const ORDER_PHONES = [
   { href: 'tel:+79617959560', label: '+7 (961) 795-95-60', storeId: 'makeeva' },
   { href: 'tel:+79123052260', label: '+7 (912) 305-22-60', storeId: 'oktyabr' },
 ] as const;
 
-export const VK_URL = 'https://vk.com/letto14';
+export const VK_URL = getVkCommunityUrl();
+export const VK_LABEL = getVkCommunityShortLabel();
 
 export const PICKUP_STORES = [
   {

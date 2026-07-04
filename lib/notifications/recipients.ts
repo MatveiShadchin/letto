@@ -48,9 +48,14 @@ export function resolveCustomerRecipients(order: Order): NotificationRecipient[]
 export function resolveAdminRecipients(): NotificationRecipient[] {
   const recipients: NotificationRecipient[] = [];
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID?.trim();
+  const vkAdminUserId = process.env.VK_ADMIN_USER_ID?.trim();
 
   if (adminChatId) {
     recipients.push({ channel: 'telegram', address: adminChatId });
+  }
+
+  if (vkAdminUserId) {
+    recipients.push({ channel: 'vk', address: vkAdminUserId });
   }
 
   return recipients;

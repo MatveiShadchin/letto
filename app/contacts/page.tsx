@@ -1,7 +1,7 @@
 import { MapPin, Phone, Clock, ArrowUpRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { InquiryForm } from '@/components/InquiryForm';
-import { ORDER_PHONES, PICKUP_STORES, VK_URL } from '@/lib/store-locations';
+import { ORDER_PHONES, PICKUP_STORES, VK_LABEL, VK_URL } from '@/lib/store-locations';
 
 export default function ContactsPage() {
   return (
@@ -95,7 +95,7 @@ export default function ContactsPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-[#0077FF]">Мы ВКонтакте</p>
-                <p className="mt-1 text-lg font-bold text-[#1A1A1A]">vk.com/letto14</p>
+                <p className="mt-1 text-lg font-bold text-[#1A1A1A]">{VK_LABEL}</p>
                 <p className="mt-1 text-sm text-[#1A1A1A]/65">
                   Новинки, акции и примеры букетов
                 </p>

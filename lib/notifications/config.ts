@@ -1,5 +1,7 @@
 import { ChannelRuntimeStatus, NotifyChannel } from '@/types/notification';
 
+import { getVkCommunityUrl, getVkWriteUrl } from '@/lib/vk-community';
+
 function env(name: string): string {
   return process.env[name]?.trim() || '';
 }
@@ -93,6 +95,8 @@ export function getPublicBotLinks() {
   const max = messagingConfig.max.botUsername
     ? `https://max.ru/${messagingConfig.max.botUsername.replace(/^@/, '')}`
     : null;
+  const vk = getVkCommunityUrl();
+  const vkWrite = getVkWriteUrl();
 
-  return { telegram, max };
+  return { telegram, max, vk, vkWrite };
 }

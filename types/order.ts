@@ -1,3 +1,5 @@
+import { NotifyChannel } from '@/types/notification';
+
 export interface OrderLineItem {
   id: string;
   name: string;
@@ -30,5 +32,10 @@ export interface Order {
   delivery_cost: number;
   total: number;
   status: 'new' | 'processing' | 'completed' | 'cancelled';
+  preferred_notify_channel?: NotifyChannel | null;
+  telegram_chat_id?: string | null;
+  vk_user_id?: string | null;
+  whatsapp_phone?: string | null;
+  max_chat_id?: string | null;
   created_at?: string;
 }

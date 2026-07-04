@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hasDatabase, query } from '@/lib/db';
+import {
+  enrichOrderFromMessengerLinks,
+  normalizeOrderRow,
+} from '@/lib/notifications/order-utils';
+import { notifyOrderCreated } from '@/lib/notifications';
+import { parseMessengerContactFromBody } from '@/lib/notifications/recipients';
 import { requireAdmin } from '@/lib/require-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { PICKUP_STORES } from '@/lib/store-locations';
+import { Order } from '@/types/order';
 
 function resolvePickupAddress(pickupStoreId: string | null | undefined): string | null {
   if (!pickupStoreId) return null;
@@ -17,6 +24,8 @@ export async function POST(request: NextRequest) {
       body.recipient_address?.trim() ||
       [body.street, body.house].filter(Boolean).join(', ') ||
       null;
+
+    const messenger = parseMessengerContactFromBody(body);
 
     if (!hasDatabase()) {
       const supabase = getSupabaseAdmin();
@@ -44,16 +53,23 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error) throw error;
+
+      const order = normalizeOrderRow({ ...data, items: body.items ?? [] });
+      void enrichOrderFromMessengerLinks(order)
+        .then((enriched) => notifyOrderCreated(enriched))
+        .catch((err) => console.error('notifyOrderCreated:', err));
+
       return NextResponse.json({ id: data.id });
     }
 
-    const { rows } = await query(
+    const { rows } = await query<Order>(
       `INSERT INTO orders (
         customer_name, phone, recipient_name, recipient_phone, recipient_address, special_wishes,
         street, house, pickup_store, delivery_method, delivery_time,
+        preferred_notify_channel, telegram_chat_id, vk_user_id, whatsapp_phone, max_chat_id,
         items, items_total, delivery_cost, total, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $14, $15, 'new')
-      RETURNING id`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb, $18, $19, $20, 'new')
+      RETURNING *`,
       [
         body.customer_name,
         body.phone,
@@ -66,12 +82,22 @@ export async function POST(request: NextRequest) {
         body.pickup_store ?? null,
         body.delivery_method,
         body.delivery_time ?? null,
+        messenger.preferred_notify_channel ?? null,
+        messenger.telegram_chat_id ?? null,
+        messenger.vk_user_id ?? null,
+        messenger.whatsapp_phone ?? null,
+        messenger.max_chat_id ?? null,
         JSON.stringify(body.items ?? []),
         body.items_total ?? 0,
         body.delivery_cost ?? 0,
         body.total ?? 0,
       ]
     );
+
+    const order = normalizeOrderRow(rows[0] as unknown as Record<string, unknown>);
+    void enrichOrderFromMessengerLinks(order)
+      .then((enriched) => notifyOrderCreated(enriched))
+      .catch((err) => console.error('notifyOrderCreated:', err));
 
     return NextResponse.json({ id: rows[0].id });
   } catch (error) {

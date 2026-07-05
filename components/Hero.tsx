@@ -51,11 +51,9 @@ export function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
           </div>
 
           <div className="relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.05)] bg-white p-6">
+            <div className="relative rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] bg-white p-6">
               {featuredProduct ? (
-                <div className="transform scale-105">
-                  <ProductCard product={featuredProduct} priority />
-                </div>
+                <ProductCard product={featuredProduct} priority />
               ) : (
                 <div className="h-[400px] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-[#F3F2F1] rounded-xl">
                   <div className="text-[#1A1A1A]/40 mb-4 antialiased">Товар дня не назначен</div>

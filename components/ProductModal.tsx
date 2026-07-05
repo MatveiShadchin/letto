@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ShoppingCart, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { useCart } from '@/contexts/CartContext';
@@ -17,8 +19,13 @@ export function ProductModal({
   onClose: () => void;
 }) {
   const { addToCart } = useCart();
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen || !product) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !product || !mounted) return null;
 
   const formattedPrice = product?.price ? (product.price / 100).toFixed(0) + ' ₽' : '0 ₽';
 
@@ -26,17 +33,16 @@ export function ProductModal({
     onClose();
   };
 
-  return (
-    <>
-      <div
-        className="fixed inset-0 z-[1000] overflow-y-auto bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
-        onClick={handleClose}
-      >
-        <div className="flex min-h-full items-center justify-center p-4 py-8">
-          <div
-            className="bg-white rounded-2xl max-w-4xl w-full relative shadow-2xl animate-in zoom-in duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[1000] overflow-y-auto bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
+      onClick={handleClose}
+    >
+      <div className="flex min-h-full items-start sm:items-center justify-center p-4 py-8">
+        <div
+          className="bg-white rounded-2xl max-w-4xl w-full relative shadow-2xl animate-in zoom-in duration-300"
+          onClick={(e) => e.stopPropagation()}
+        >
             <button
               onClick={handleClose}
               className="absolute top-4 right-4 z-20 p-2 bg-[#F3F2F1] hover:bg-[#E8E6E4] rounded-lg transition-colors"
@@ -100,7 +106,7 @@ export function ProductModal({
             </div>
           </div>
         </div>
-      </div>
-    </>
+      </div>,
+    document.body
   );
 }

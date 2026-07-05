@@ -1,6 +1,7 @@
 export const FLORIST_OPEN_HOUR = 8;
 export const FLORIST_CLOSE_HOUR = 20;
 export const URGENT_CUTOFF_MINUTES_BEFORE_CLOSE = 15;
+export const PICKUP_AVAILABLE_24_7 = true;
 export const STORE_TIMEZONE =
   process.env.NEXT_PUBLIC_STORE_TIMEZONE?.trim() || 'Asia/Yekaterinburg';
 
@@ -13,6 +14,7 @@ export const DELIVERY_TIME_SLOTS = [
 ] as const;
 
 export type FloristHoursStatus = 'open' | 'urgent_closed' | 'closed';
+export type FloristHoursMode = 'courier' | 'pickup' | 'both';
 
 export interface FloristHoursInfo {
   status: FloristHoursStatus;
@@ -21,6 +23,7 @@ export interface FloristHoursInfo {
   canProcessToday: boolean;
   deliveryDayLabel: 'сегодня' | 'завтра';
   workingHoursLabel: string;
+  pickupHoursLabel: string;
 }
 
 function getStoreTimeParts(date = new Date()): { hour: number; minute: number; totalMinutes: number } {
@@ -44,44 +47,130 @@ function parseSlotStartMinutes(slot: string): number {
   return Number(match[1]) * 60 + Number(match[2]);
 }
 
-export function getFloristHoursInfo(now = new Date()): FloristHoursInfo {
+function getFloristProcessingStatus(now = new Date()): {
+  status: FloristHoursStatus;
+  canProcessToday: boolean;
+  deliveryDayLabel: 'сегодня' | 'завтра';
+} {
   const { totalMinutes } = getStoreTimeParts(now);
   const openMinutes = FLORIST_OPEN_HOUR * 60;
   const closeMinutes = FLORIST_CLOSE_HOUR * 60;
   const urgentCutoffMinutes = closeMinutes - URGENT_CUTOFF_MINUTES_BEFORE_CLOSE;
-  const workingHoursLabel = `${FLORIST_OPEN_HOUR}:00–${FLORIST_CLOSE_HOUR}:00`;
 
   if (totalMinutes < openMinutes || totalMinutes >= closeMinutes) {
-    return {
-      status: 'closed',
-      title: 'Сейчас магазин закрыт',
-      message:
-        'Флористы работают с 8:00 до 20:00. Заказ мы примём, но обработка начнётся завтра с 8:00.',
-      canProcessToday: false,
-      deliveryDayLabel: 'завтра',
-      workingHoursLabel,
-    };
+    return { status: 'closed', canProcessToday: false, deliveryDayLabel: 'завтра' };
   }
 
   if (totalMinutes >= urgentCutoffMinutes) {
+    return { status: 'urgent_closed', canProcessToday: false, deliveryDayLabel: 'завтра' };
+  }
+
+  return { status: 'open', canProcessToday: true, deliveryDayLabel: 'сегодня' };
+}
+
+export function getFloristHoursInfo(
+  now = new Date(),
+  mode: FloristHoursMode = 'both'
+): FloristHoursInfo {
+  const processing = getFloristProcessingStatus(now);
+  const workingHoursLabel = `${FLORIST_OPEN_HOUR}:00–${FLORIST_CLOSE_HOUR}:00`;
+  const pickupHoursLabel = 'круглосуточно';
+
+  if (mode === 'pickup') {
+    if (processing.canProcessToday) {
+      return {
+        ...processing,
+        title: 'Самовывоз — круглосуточно',
+        message:
+          'Забрать заказ можно в любое время. Букет соберут в рабочее время флористов (8:00–20:00).',
+        workingHoursLabel,
+        pickupHoursLabel,
+      };
+    }
+
+    if (processing.status === 'urgent_closed') {
+      return {
+        ...processing,
+        title: 'Самовывоз — круглосуточно',
+        message:
+          'Срочные заказы сегодня уже не собираем — букет будет готов завтра с 8:00. Забрать можно в любое время.',
+        workingHoursLabel,
+        pickupHoursLabel,
+      };
+    }
+
     return {
-      status: 'urgent_closed',
+      ...processing,
+      title: 'Самовывоз — круглосуточно',
+      message:
+        'Сейчас флористы не работают — букет соберут завтра с 8:00. Пункты самовывоза открыты круглосуточно.',
+      workingHoursLabel,
+      pickupHoursLabel,
+    };
+  }
+
+  if (mode === 'courier') {
+    if (processing.canProcessToday) {
+      return {
+        ...processing,
+        title: 'Доставка курьером',
+        message: 'Флористы работают с 8:00 до 20:00. Заказ обработаем в рабочее время.',
+        workingHoursLabel,
+        pickupHoursLabel,
+      };
+    }
+
+    if (processing.status === 'urgent_closed') {
+      return {
+        ...processing,
+        title: 'Срочная доставка сегодня недоступна',
+        message:
+          'До закрытия меньше 15 минут — срочные букеты сегодня не собираем. Заказ обработаем завтра с 8:00.',
+        workingHoursLabel,
+        pickupHoursLabel,
+      };
+    }
+
+    return {
+      ...processing,
+      title: 'Доставка сейчас недоступна',
+      message:
+        'Флористы работают с 8:00 до 20:00. Заказ примём, обработка и доставка — с 8:00 следующего дня.',
+      workingHoursLabel,
+      pickupHoursLabel,
+    };
+  }
+
+  // both — корзина и общий блок
+  if (processing.canProcessToday) {
+    return {
+      ...processing,
+      title: 'Режим работы',
+      message:
+        'Самовывоз — круглосуточно. Доставка курьером и сбор букетов — с 8:00 до 20:00.',
+      workingHoursLabel,
+      pickupHoursLabel,
+    };
+  }
+
+  if (processing.status === 'urgent_closed') {
+    return {
+      ...processing,
       title: 'Срочные заказы сегодня уже не принимаем',
       message:
-        'До закрытия осталось меньше 15 минут. Срочные букеты сегодня не собираем — заказ обработаем завтра с 8:00.',
-      canProcessToday: false,
-      deliveryDayLabel: 'завтра',
+        'Сбор букетов — завтра с 8:00. Самовывоз по-прежнему круглосуточный.',
       workingHoursLabel,
+      pickupHoursLabel,
     };
   }
 
   return {
-    status: 'open',
-    title: 'Флористы на связи',
-    message: 'Работаем с 8:00 до 20:00. Заказ обработаем в рабочее время.',
-    canProcessToday: true,
-    deliveryDayLabel: 'сегодня',
+    ...processing,
+    title: 'Сбор заказов начнётся утром',
+    message:
+      'Флористы работают с 8:00 до 20:00. Заказ примём сейчас, сбор — с 8:00. Самовывоз — круглосуточно.',
     workingHoursLabel,
+    pickupHoursLabel,
   };
 }
 
@@ -89,11 +178,11 @@ export function getAvailableDeliverySlots(now = new Date()): Array<{
   value: string;
   label: string;
 }> {
-  const info = getFloristHoursInfo(now);
+  const processing = getFloristProcessingStatus(now);
   const { totalMinutes } = getStoreTimeParts(now);
 
   return DELIVERY_TIME_SLOTS.map((slot) => {
-    if (!info.canProcessToday) {
+    if (!processing.canProcessToday) {
       return { value: slot, label: `${slot} (завтра)` };
     }
 
@@ -106,10 +195,21 @@ export function getAvailableDeliverySlots(now = new Date()): Array<{
   });
 }
 
-export function formatFloristProcessingNote(now = new Date()): string {
-  const info = getFloristHoursInfo(now);
-  if (info.canProcessToday) {
+export function formatFloristProcessingNote(
+  deliveryMethod: 'courier' | 'pickup' = 'courier',
+  now = new Date()
+): string {
+  const processing = getFloristProcessingStatus(now);
+
+  if (deliveryMethod === 'pickup') {
+    if (processing.canProcessToday) {
+      return 'Заказ принят. Букет соберут в рабочее время (8:00–20:00). Самовывоз — круглосуточно.';
+    }
+    return 'Заказ принят. Букет будет готов с 8:00. Забрать можно круглосуточно.';
+  }
+
+  if (processing.canProcessToday) {
     return 'Мы свяжемся с вами для подтверждения в рабочее время (8:00–20:00).';
   }
-  return 'Заказ принят. Флористы обработают его завтра с 8:00.';
+  return 'Заказ принят. Доставка и сбор — с 8:00 следующего дня.';
 }

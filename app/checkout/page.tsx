@@ -39,6 +39,7 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placedPhone, setPlacedPhone] = useState('');
+  const [placedDeliveryMethod, setPlacedDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
   const [deliverySlots, setDeliverySlots] = useState(() => getAvailableDeliverySlots());
   const [messengerContact, setMessengerContact] = useState<MessengerContactFormValue>({
     channel: 'phone',
@@ -117,6 +118,7 @@ export default function CheckoutPage() {
       clearCart();
       setPlacedOrderId(result.id);
       setPlacedPhone(formData.customerPhone.trim());
+      setPlacedDeliveryMethod(deliveryMethod);
       setSuccess(true);
     } catch (err) {
       console.error('Ошибка оформления заказа:', err);
@@ -200,7 +202,9 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-[#FAFAF9]">
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-3xl font-bold text-[#1A1A1A] mb-4">Заказ оформлен</h1>
-          <p className="text-[#1A1A1A]/70 mb-6">{formatFloristProcessingNote()}</p>
+          <p className="text-[#1A1A1A]/70 mb-6">
+            {formatFloristProcessingNote(placedDeliveryMethod)}
+          </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
             {messengerContact.channel !== 'vk' && (
               <VkOrderStatusLink customerPhone={placedPhone} orderId={placedOrderId} />
@@ -245,7 +249,7 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <FloristHoursNotice className="mb-6" />
+        <FloristHoursNotice className="mb-6" mode={deliveryMethod} />
 
         <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
@@ -331,6 +335,10 @@ export default function CheckoutPage() {
 
               {deliveryMethod === 'pickup' && (
                 <div className="mt-4 space-y-3">
+                  <p className="rounded-xl bg-[#F3FAF3] border border-[#D8E8D8] px-4 py-3 text-sm text-[#1A3D1A]">
+                    Самовывоз — <strong>круглосуточно</strong>. Букет соберут с 8:00 до 20:00, забрать
+                    можно в любое время.
+                  </p>
                   <p className="text-sm font-medium text-[#1A1A1A]">Выберите точку самовывоза *</p>
                   {PICKUP_STORES.map((store) => (
                     <label

@@ -2,17 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
-import { FloristHoursInfo, getFloristHoursInfo } from '@/lib/florist-hours';
+import {
+  FloristHoursInfo,
+  FloristHoursMode,
+  getFloristHoursInfo,
+} from '@/lib/florist-hours';
 import { cn } from '@/lib/utils';
 
-export function FloristHoursNotice({ className }: { className?: string }) {
-  const [info, setInfo] = useState<FloristHoursInfo>(() => getFloristHoursInfo());
+export function FloristHoursNotice({
+  className,
+  mode = 'both',
+}: {
+  className?: string;
+  mode?: FloristHoursMode;
+}) {
+  const [info, setInfo] = useState<FloristHoursInfo>(() => getFloristHoursInfo(new Date(), mode));
 
   useEffect(() => {
-    setInfo(getFloristHoursInfo());
-    const timer = window.setInterval(() => setInfo(getFloristHoursInfo()), 60_000);
+    const update = () => setInfo(getFloristHoursInfo(new Date(), mode));
+    update();
+    const timer = window.setInterval(update, 60_000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [mode]);
 
   const tone =
     info.status === 'open'
@@ -26,7 +37,10 @@ export function FloristHoursNotice({ className }: { className?: string }) {
         <div>
           <p className="font-semibold">{info.title}</p>
           <p className="mt-1 text-sm leading-relaxed opacity-90">{info.message}</p>
-          <p className="mt-2 text-xs opacity-75">Режим работы флористов: {info.workingHoursLabel}</p>
+          <p className="mt-2 text-xs opacity-75">
+            Сбор букетов: {info.workingHoursLabel}
+            {mode !== 'courier' && ` · Самовывоз: ${info.pickupHoursLabel}`}
+          </p>
         </div>
       </div>
     </div>

@@ -28,8 +28,12 @@ export default function ContactsPage() {
               <div className="flex items-start gap-3">
                 <Clock className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#5E4037]" />
                 <div>
-                  <p className="font-medium text-[#1A1A1A]">Часы работы</p>
-                  <p className="text-[#1A1A1A]/80">Ежедневно с 9:00 до 21:00</p>
+                  <p className="font-medium text-[#1A1A1A]">Обработка заказов</p>
+                  <p className="text-[#1A1A1A]/80">Ежедневно с 8:00 до 20:00</p>
+                  <p className="text-xs text-[#1A1A1A]/55 mt-1">
+                    После 19:45 срочные заказы переносятся на утро. Вне этого времени заказы ждут
+                    до 8:00 следующего дня.
+                  </p>
                 </div>
               </div>
             </div>

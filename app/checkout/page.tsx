@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { VkOrderStatusLink } from '@/components/VkOrderStatusLink';
 import { MessengerContactSection, MessengerContactFormValue } from '@/components/MessengerContactSection';
 import { ProductImage } from '@/components/ProductImage';
+import { FloristHoursNotice } from '@/components/FloristHoursNotice';
 import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
 import { apiJson } from '@/lib/api-client';
@@ -15,6 +16,7 @@ import {
   FREE_DELIVERY_THRESHOLD_RUBLES,
 } from '@/lib/delivery';
 import { validateMessengerContactInput } from '@/lib/messenger-contact';
+import { formatFloristProcessingNote, getAvailableDeliverySlots } from '@/lib/florist-hours';
 import { PICKUP_STORES, PickupStoreId } from '@/lib/store-locations';
 import { cn } from '@/lib/utils';
 import { OrderPostcard } from '@/types/product';
@@ -37,24 +39,30 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placedPhone, setPlacedPhone] = useState('');
+  const [deliverySlots, setDeliverySlots] = useState(() => getAvailableDeliverySlots());
   const [messengerContact, setMessengerContact] = useState<MessengerContactFormValue>({
     channel: 'phone',
     contact: '',
     useCustomerPhoneForWhatsapp: true,
   });
 
+  const timeSlots = useMemo(() => deliverySlots.map((slot) => slot.value), [deliverySlots]);
+
+  useEffect(() => {
+    setDeliverySlots(getAvailableDeliverySlots());
+    const timer = window.setInterval(() => setDeliverySlots(getAvailableDeliverySlots()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (formData.deliveryTime && !timeSlots.includes(formData.deliveryTime)) {
+      setFormData((prev) => ({ ...prev, deliveryTime: '' }));
+    }
+  }, [formData.deliveryTime, timeSlots]);
+
   const deliveryCostRub = calcDeliveryCostRubles(state.total, deliveryMethod);
   const itemsTotal = state.total / 100;
   const total = itemsTotal + deliveryCostRub;
-
-  const timeSlots = [
-    '10:00-12:00',
-    '12:00-14:00',
-    '14:00-16:00',
-    '16:00-18:00',
-    '18:00-20:00',
-    '20:00-22:00',
-  ];
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -192,7 +200,7 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-[#FAFAF9]">
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-3xl font-bold text-[#1A1A1A] mb-4">Заказ оформлен</h1>
-          <p className="text-[#1A1A1A]/70 mb-6">Спасибо! Мы свяжемся с вами для подтверждения.</p>
+          <p className="text-[#1A1A1A]/70 mb-6">{formatFloristProcessingNote()}</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
             {messengerContact.channel !== 'vk' && (
               <VkOrderStatusLink customerPhone={placedPhone} orderId={placedOrderId} />
@@ -236,6 +244,8 @@ export default function CheckoutPage() {
             {error}
           </div>
         )}
+
+        <FloristHoursNotice className="mb-6" />
 
         <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
@@ -430,9 +440,9 @@ export default function CheckoutPage() {
                       className="w-full rounded-xl border border-[#E8E4E0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5E4037]"
                     >
                       <option value="">Выберите время</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>
-                          {time}
+                      {deliverySlots.map((slot) => (
+                        <option key={slot.value} value={slot.value}>
+                          {slot.label}
                         </option>
                       ))}
                     </select>

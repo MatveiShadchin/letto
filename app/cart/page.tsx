@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FloristHoursNotice } from '@/components/FloristHoursNotice';
 import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
@@ -53,7 +54,9 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-[#1A1A1A] mb-8">Корзина</h1>
+        <h1 className="text-3xl font-bold text-[#1A1A1A] mb-6">Корзина</h1>
+
+        <FloristHoursNotice className="mb-6" />
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">

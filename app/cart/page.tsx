@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AddToCartExtras } from '@/components/AddToCartExtras';
 import { CartRecommendations } from '@/components/CartRecommendations';
 import { FloristHoursNotice } from '@/components/FloristHoursNotice';
 import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
@@ -11,11 +12,11 @@ import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 import { ProductImage } from '@/components/ProductImage';
 import { formatCourierDeliveryHint } from '@/lib/delivery';
-import { formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
+import { isBouquetProduct } from '@/lib/product-recommendations';
 
 export default function CartPage() {
   const router = useRouter();
-  const { state, removeFromCart, updateQuantity, clearCart, setOrderPostcard } = useCart();
+  const { state, removeFromCart, updateQuantity, updateItemAddons, clearCart, setOrderPostcard } = useCart();
   const [postcardError, setPostcardError] = useState<string | null>(null);
   const deliveryHint = formatCourierDeliveryHint(state.total);
 
@@ -64,65 +65,70 @@ export default function CartPage() {
             <div className="bg-white rounded-2xl border border-[#E8E4E0] p-6 shadow-sm">
               <div className="space-y-6">
                 {state.items.map((item) => (
-                  <div key={item.cartKey} className="flex items-center border-b border-[#F3F2F1] pb-6">
-                    <div className="w-24 h-24 bg-[#F9F5F0] rounded-xl mr-4 flex-shrink-0 relative overflow-hidden">
-                      <ProductImage
-                        src={item.image_url}
-                        alt={item.name}
-                        className="object-cover rounded-xl"
-                        size={96}
-                      />
-                    </div>
+                  <div key={item.cartKey} className="border-b border-[#F3F2F1] pb-6">
+                    <div className="flex items-start">
+                      <div className="w-24 h-24 bg-[#F9F5F0] rounded-xl mr-4 flex-shrink-0 relative overflow-hidden">
+                        <ProductImage
+                          src={item.image_url}
+                          alt={item.name}
+                          className="object-cover rounded-xl"
+                          size={96}
+                        />
+                      </div>
 
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-[#1A1A1A] mb-1">{item.name}</h3>
-                      <p className="text-sm text-[#1A1A1A]/60 mb-1 line-clamp-2">{item.description}</p>
-                      {hasAddons(item.addons) && (
-                        <p className="text-xs text-[#1A1A1A]/50 mb-2">
-                          {formatAddonsSummary(item.addons)}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center flex-wrap gap-3">
-                          <div className="flex items-center border border-[#E8E4E0] rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-[#1A1A1A] mb-1">{item.name}</h3>
+                        <p className="text-sm text-[#1A1A1A]/60 mb-3 line-clamp-2">{item.description}</p>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center flex-wrap gap-3">
+                            <div className="flex items-center border border-[#E8E4E0] rounded-xl">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="px-3">{item.quantity}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
                             <Button
                               variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
+                              size="sm"
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              onClick={() => removeFromCart(item.cartKey)}
                             >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="px-3">{item.quantity}</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Удалить
                             </Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={() => removeFromCart(item.cartKey)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Удалить
-                          </Button>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-[#1A1A1A]">
-                            {((item.price * item.quantity) / 100).toFixed(0)} ₽
-                          </div>
-                          <div className="text-sm text-[#1A1A1A]/50">
-                            {(item.price / 100).toFixed(0)} ₽ × {item.quantity}
+                          <div className="text-right shrink-0">
+                            <div className="text-lg font-bold text-[#1A1A1A]">
+                              {((item.price * item.quantity) / 100).toFixed(0)} ₽
+                            </div>
+                            <div className="text-sm text-[#1A1A1A]/50">
+                              {(item.price / 100).toFixed(0)} ₽ × {item.quantity}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    {isBouquetProduct(item.category) && (
+                      <AddToCartExtras
+                        className="mt-4 sm:pl-28"
+                        addons={item.addons}
+                        onChange={(addons) => updateItemAddons(item.cartKey, addons)}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

@@ -2,13 +2,14 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { DEFAULT_CART_EXTRAS, makeCartKey } from '@/lib/cart-extras';
-import { CartItem, CartItemExtras, CartState, OrderPostcard, Product } from '@/types/product';
+import { CartAddons, CartItem, CartItemExtras, CartState, OrderPostcard, Product } from '@/types/product';
 
 interface CartContextType {
   state: CartState;
   addToCart: (product: Product, extras?: CartItemExtras) => void;
   removeFromCart: (cartKey: string) => void;
   updateQuantity: (cartKey: string, quantity: number) => void;
+  updateItemAddons: (cartKey: string, addons: CartAddons) => void;
   setOrderPostcard: (postcard: OrderPostcard) => void;
   clearCart: () => void;
 }
@@ -19,6 +20,7 @@ type CartAction =
   | { type: 'ADD_TO_CART'; payload: { product: Product; extras: CartItemExtras } }
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { cartKey: string; quantity: number } }
+  | { type: 'UPDATE_ITEM_ADDONS'; payload: { cartKey: string; addons: CartAddons } }
   | { type: 'SET_ORDER_POSTCARD'; payload: OrderPostcard }
   | { type: 'CLEAR_CART' };
 
@@ -71,6 +73,38 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       return { ...state, items: updatedItems, ...calcTotals(updatedItems) };
     }
 
+    case 'UPDATE_ITEM_ADDONS': {
+      const { cartKey, addons } = action.payload;
+      const item = state.items.find((entry) => entry.cartKey === cartKey);
+      if (!item) return state;
+
+      const extras: CartItemExtras = {
+        postcardWanted: item.postcardWanted,
+        postcardText: item.postcardText,
+        addons: { ...addons },
+      };
+      const newCartKey = makeCartKey(item.id, extras);
+
+      if (newCartKey === cartKey) {
+        const updatedItems = state.items.map((entry) =>
+          entry.cartKey === cartKey ? { ...entry, addons: { ...addons } } : entry
+        );
+        return { ...state, items: updatedItems };
+      }
+
+      const withoutOld = state.items.filter((entry) => entry.cartKey !== cartKey);
+      const existing = withoutOld.find((entry) => entry.cartKey === newCartKey);
+      const newItems = existing
+        ? withoutOld.map((entry) =>
+            entry.cartKey === newCartKey
+              ? { ...entry, quantity: entry.quantity + item.quantity }
+              : entry
+          )
+        : [...withoutOld, { ...item, cartKey: newCartKey, addons: { ...addons } }];
+
+      return { ...state, items: newItems, ...calcTotals(newItems) };
+    }
+
     case 'SET_ORDER_POSTCARD':
       return { ...state, orderPostcard: action.payload };
 
@@ -104,6 +138,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { cartKey, quantity } });
   };
 
+  const updateItemAddons = (cartKey: string, addons: CartAddons) => {
+    dispatch({ type: 'UPDATE_ITEM_ADDONS', payload: { cartKey, addons } });
+  };
+
   const setOrderPostcard = (postcard: OrderPostcard) => {
     dispatch({ type: 'SET_ORDER_POSTCARD', payload: postcard });
   };
@@ -114,7 +152,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ state, addToCart, removeFromCart, updateQuantity, setOrderPostcard, clearCart }}
+      value={{ state, addToCart, removeFromCart, updateQuantity, updateItemAddons, setOrderPostcard, clearCart }}
     >
       {children}
     </CartContext.Provider>

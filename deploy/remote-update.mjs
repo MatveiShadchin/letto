@@ -1,10 +1,29 @@
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { Client } from 'ssh2';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, '..');
+const archivePath = path.join(projectRoot, 'letto-clean.tgz');
+
+function packProject() {
+  console.log('Packing fresh archive from workspace...');
+  if (fs.existsSync(archivePath)) {
+    fs.unlinkSync(archivePath);
+  }
+
+  execSync(
+    `tar -czf "${archivePath}" --exclude=node_modules --exclude=.next --exclude=.git --exclude=*.rar --exclude=*.zip --exclude=letto-clean.tgz -C "${projectRoot}" .`,
+    { stdio: 'inherit' }
+  );
+
+  const sizeMb = (fs.statSync(archivePath).size / (1024 * 1024)).toFixed(2);
+  console.log(`Archive ready: ${archivePath} (${sizeMb} MB)`);
+}
+
+packProject();
 
 const host = '147.45.158.254';
 const username = 'root';

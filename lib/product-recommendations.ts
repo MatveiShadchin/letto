@@ -41,6 +41,10 @@ function isBouquetCategory(category: string): boolean {
   return BOUQUET_CATEGORIES.includes(normalizeCategory(category));
 }
 
+export function isBouquetProduct(category: string): boolean {
+  return isBouquetCategory(category);
+}
+
 export function getCartRecommendationTitle(cartItems: Product[]): string {
   return cartItems.some((item) => isBouquetCategory(item.category))
     ? 'Дополните букет'

@@ -9,15 +9,15 @@ const projectRoot = path.join(__dirname, '..');
 const archivePath = path.join(projectRoot, 'letto-clean.tgz');
 
 function packProject() {
-  console.log('Packing fresh archive from workspace...');
+  console.log('Packing fresh archive from git...');
   if (fs.existsSync(archivePath)) {
     fs.unlinkSync(archivePath);
   }
 
-  execSync(
-    `tar -czf "${archivePath}" --exclude=node_modules --exclude=.next --exclude=.git --exclude=*.rar --exclude=*.zip --exclude=letto-clean.tgz -C "${projectRoot}" .`,
-    { stdio: 'inherit' }
-  );
+  execSync(`git archive --format=tar.gz -o "${archivePath}" HEAD`, {
+    cwd: projectRoot,
+    stdio: 'inherit',
+  });
 
   const sizeMb = (fs.statSync(archivePath).size / (1024 * 1024)).toFixed(2);
   console.log(`Archive ready: ${archivePath} (${sizeMb} MB)`);

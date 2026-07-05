@@ -25,6 +25,7 @@ export function normalizeOrderRow(row: Record<string, unknown>): Order {
     total: Number(row.total ?? 0),
     status: (row.status as Order['status']) ?? 'new',
     preferred_notify_channel: (row.preferred_notify_channel as NotifyChannel | null) ?? null,
+    messenger_contact: (row.messenger_contact as string | null) ?? null,
     telegram_chat_id: (row.telegram_chat_id as string | null) ?? null,
     vk_user_id: (row.vk_user_id as string | null) ?? null,
     whatsapp_phone: (row.whatsapp_phone as string | null) ?? null,

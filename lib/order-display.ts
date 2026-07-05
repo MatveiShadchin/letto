@@ -1,3 +1,4 @@
+import { formatOrderMessengerContact } from '@/lib/messenger-contact';
 import { PICKUP_STORES } from '@/lib/store-locations';
 import { formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
 import { Order, OrderLineItem } from '@/types/order';
@@ -42,6 +43,10 @@ export function formatOrderDetails(order: Order): string {
   const lines: string[] = ['Заказ с сайта', ''];
   lines.push(`Заказчик: ${order.customer_name || '—'}`);
   lines.push(`Телефон заказчика: ${order.phone || '—'}`);
+  const messengerLine = formatOrderMessengerContact(order);
+  if (messengerLine !== '—') {
+    lines.push(`Связь для уточнений: ${messengerLine}`);
+  }
   lines.push('');
 
   if (order.delivery_method === 'pickup') {

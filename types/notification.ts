@@ -16,6 +16,7 @@ export type NotifyDeliveryStatus = 'sent' | 'skipped' | 'failed';
 
 export interface OrderMessengerContact {
   preferred_notify_channel?: NotifyChannel | null;
+  messenger_contact?: string | null;
   telegram_chat_id?: string | null;
   vk_user_id?: string | null;
   whatsapp_phone?: string | null;

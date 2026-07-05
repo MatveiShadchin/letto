@@ -49,6 +49,7 @@ if grep -q '^DATABASE_URL=' .env.local; then
   psql "$DATABASE_URL" -f database/migrations/001_reviews_pickup_popularity.sql || true
   psql "$DATABASE_URL" -f database/migrations/002_order_recipient_fields.sql || true
   psql "$DATABASE_URL" -f database/migrations/003_messaging_notifications.sql || true
+  psql "$DATABASE_URL" -f database/migrations/004_messenger_contact_label.sql || true
 fi
 
 echo "==> Сборка и перезапуск"

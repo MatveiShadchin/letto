@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { VkOrderStatusLink } from '@/components/VkOrderStatusLink';
+import { MessengerContactSection, MessengerContactFormValue } from '@/components/MessengerContactSection';
 import { ProductImage } from '@/components/ProductImage';
 import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
@@ -13,6 +14,7 @@ import {
   formatDeliveryLine,
   FREE_DELIVERY_THRESHOLD_RUBLES,
 } from '@/lib/delivery';
+import { validateMessengerContactInput } from '@/lib/messenger-contact';
 import { PICKUP_STORES, PickupStoreId } from '@/lib/store-locations';
 import { cn } from '@/lib/utils';
 import { OrderPostcard } from '@/types/product';
@@ -35,6 +37,11 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placedPhone, setPlacedPhone] = useState('');
+  const [messengerContact, setMessengerContact] = useState<MessengerContactFormValue>({
+    channel: 'phone',
+    contact: '',
+    useCustomerPhoneForWhatsapp: true,
+  });
 
   const deliveryCostRub = calcDeliveryCostRubles(state.total, deliveryMethod);
   const itemsTotal = state.total / 100;
@@ -63,12 +70,19 @@ export default function CheckoutPage() {
       setSubmitting(true);
       setError(null);
 
+      const contactValue =
+        messengerContact.channel === 'whatsapp' && messengerContact.useCustomerPhoneForWhatsapp
+          ? formData.customerPhone.trim()
+          : messengerContact.contact.trim();
+
       const result = await apiJson<{ id: string }>('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customer_name: formData.customerName.trim(),
           phone: formData.customerPhone.trim(),
+          contact_channel: messengerContact.channel,
+          contact_value: contactValue,
           recipient_name: deliveryMethod === 'courier' ? formData.recipientName.trim() : null,
           recipient_phone: deliveryMethod === 'courier' ? formData.recipientPhone.trim() : null,
           recipient_address:
@@ -155,6 +169,21 @@ export default function CheckoutPage() {
       return;
     }
 
+    const contactValue =
+      messengerContact.channel === 'whatsapp' && messengerContact.useCustomerPhoneForWhatsapp
+        ? formData.customerPhone.trim()
+        : messengerContact.contact.trim();
+
+    const contactError = validateMessengerContactInput(
+      messengerContact.channel,
+      contactValue,
+      formData.customerPhone.trim()
+    );
+    if (contactError) {
+      setError(contactError);
+      return;
+    }
+
     await submitOrder();
   };
 
@@ -165,7 +194,9 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-bold text-[#1A1A1A] mb-4">Заказ оформлен</h1>
           <p className="text-[#1A1A1A]/70 mb-6">Спасибо! Мы свяжемся с вами для подтверждения.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
-            <VkOrderStatusLink customerPhone={placedPhone} orderId={placedOrderId} />
+            {messengerContact.channel !== 'vk' && (
+              <VkOrderStatusLink customerPhone={placedPhone} orderId={placedOrderId} />
+            )}
             <Link
               href="/catalog"
               className="inline-block rounded-xl border border-[#E8E4E0] bg-white text-[#1A1A1A] hover:bg-[#F9F5F0] px-6 py-3"
@@ -174,8 +205,9 @@ export default function CheckoutPage() {
             </Link>
           </div>
           <p className="text-sm text-[#1A1A1A]/55 max-w-md mx-auto">
-            Нажмите кнопку ВКонтакте и отправьте сообщение — мы привяжем чат к заказу и будем
-            присылать статус.
+            {messengerContact.channel === 'vk'
+              ? 'Мы свяжемся с вами во ВКонтакте по указанным данным.'
+              : 'Если выбрали ВКонтакте — можно также написать в группу для статуса заказа.'}
           </p>
         </div>
       </div>
@@ -246,6 +278,12 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
+
+            <MessengerContactSection
+              value={messengerContact}
+              onChange={setMessengerContact}
+              customerPhone={formData.customerPhone}
+            />
 
             <div className="rounded-2xl border border-[#E8E4E0] bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold text-[#1A1A1A] mb-4">Способ получения</h2>

@@ -33,6 +33,7 @@ export interface Order {
   total: number;
   status: 'new' | 'processing' | 'completed' | 'cancelled';
   preferred_notify_channel?: NotifyChannel | null;
+  messenger_contact?: string | null;
   telegram_chat_id?: string | null;
   vk_user_id?: string | null;
   whatsapp_phone?: string | null;

@@ -12,6 +12,7 @@ import {
   isOrderProcessed,
   normalizeOrderItems,
 } from '@/lib/order-display';
+import { formatOrderMessengerContact } from '@/lib/messenger-contact';
 import { Inquiry } from '@/types/inquiry';
 import { Order } from '@/types/order';
 
@@ -471,6 +472,10 @@ function OrderDetails({
 
       <DetailField label="Заказчик" value={order.customer_name || '—'} />
       <DetailField label="Телефон заказчика" value={order.phone || '—'} />
+      <DetailField
+        label="Связь для уточнений"
+        value={formatOrderMessengerContact(order)}
+      />
       <DetailField
         label="Способ получения"
         value={order.delivery_method === 'pickup' ? 'Самовывоз' : 'Курьер'}

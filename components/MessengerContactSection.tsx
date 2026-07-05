@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { ClipboardPaste } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   CHECKOUT_CONTACT_OPTIONS,
   CheckoutContactChannel,
@@ -20,14 +23,49 @@ interface MessengerContactSectionProps {
   className?: string;
 }
 
+function applyPastedContact(raw: string): string {
+  return raw.trim();
+}
+
 export function MessengerContactSection({
   value,
   onChange,
   customerPhone = '',
   className,
 }: MessengerContactSectionProps) {
+  const [pasteHint, setPasteHint] = useState<string | null>(null);
   const option = getCheckoutContactOption(value.channel);
-  const showContactField = value.channel !== 'phone';
+
+  const setContact = (contact: string) => {
+    setPasteHint(null);
+    onChange({ ...value, contact });
+  };
+
+  const pasteFromClipboard = async () => {
+    setPasteHint(null);
+
+    try {
+      if (navigator.clipboard?.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text.trim()) {
+          setContact(applyPastedContact(text));
+          return;
+        }
+      }
+    } catch {
+      /* fallback below */
+    }
+
+    setPasteHint('Не удалось вставить автоматически — зажмите поле и выберите «Вставить»');
+  };
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = event.clipboardData.getData('text');
+    if (!pasted.trim()) return;
+
+    event.preventDefault();
+    setContact(applyPastedContact(pasted));
+  };
 
   return (
     <div
@@ -40,7 +78,7 @@ export function MessengerContactSection({
         Как с вами связаться для уточнения заказа?
       </h2>
       <p className="text-sm text-[#1A1A1A]/60 mb-4">
-        Выберите удобный мессенджер — мы напишем, если понадобится уточнить детали.
+        Выберите удобный мессенджер — можно вставить ссылку или @username из буфера.
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
@@ -79,15 +117,31 @@ export function MessengerContactSection({
             <label htmlFor="messengerContact" className="block text-sm font-medium text-[#1A1A1A] mb-2">
               {option?.hint} *
             </label>
-            <input
-              id="messengerContact"
-              type="text"
-              value={value.contact}
-              onChange={(e) => onChange({ ...value, contact: e.target.value })}
-              placeholder={option?.placeholder}
-              className="w-full rounded-xl border border-[#E8E4E0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5E4037]"
-              autoComplete="off"
-            />
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                id="messengerContact"
+                type="text"
+                inputMode="text"
+                value={value.contact}
+                onChange={(e) => setContact(e.target.value)}
+                onPaste={handlePaste}
+                placeholder={option?.placeholder}
+                className="w-full flex-1 rounded-xl border border-[#E8E4E0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5E4037]"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl border-[#E8E4E0] shrink-0"
+                onClick={pasteFromClipboard}
+              >
+                <ClipboardPaste className="h-4 w-4 mr-2" />
+                Вставить
+              </Button>
+            </div>
+            {pasteHint && <p className="mt-2 text-xs text-[#1A1A1A]/60">{pasteHint}</p>}
           </div>
 
           {value.channel === 'whatsapp' && customerPhone.trim() && (

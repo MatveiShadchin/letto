@@ -38,7 +38,15 @@ export function PostcardSection({ value, onChange, className }: PostcardSectionP
   const updateText = (text: string) => {
     setPostcardText(text);
     if (wantsPostcard) {
-      onChange({ wanted: true, text: text.trim() });
+      onChange({ wanted: true, text });
+    }
+  };
+
+  const commitText = () => {
+    const trimmed = postcardText.trim();
+    setPostcardText(trimmed);
+    if (wantsPostcard) {
+      onChange({ wanted: true, text: trimmed });
     }
   };
 
@@ -88,6 +96,7 @@ export function PostcardSection({ value, onChange, className }: PostcardSectionP
             id="postcard-text"
             value={postcardText}
             onChange={(e) => updateText(e.target.value)}
+            onBlur={commitText}
             placeholder="Например: С днём рождения, любимая!"
             className="min-h-[100px] rounded-xl border-[#E8E4E0] bg-white text-[#1A1A1A] focus-visible:ring-[#5E4037]"
           />

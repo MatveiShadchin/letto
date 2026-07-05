@@ -3,13 +3,7 @@ import { ChevronRight, Sparkles } from 'lucide-react';
 import { Product } from '@/types/product';
 import { ProductCard } from './ProductCard';
 
-export function Hero({
-  featuredProduct,
-  catalogProducts,
-}: {
-  featuredProduct: Product | null;
-  catalogProducts?: Product[];
-}) {
+export function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#F3F2F1] to-white min-h-[600px]">
       <div className="container mx-auto px-4 py-16 md:py-24">
@@ -60,11 +54,7 @@ export function Hero({
             <div className="relative rounded-2xl overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.05)] bg-white p-6">
               {featuredProduct ? (
                 <div className="transform scale-105">
-                  <ProductCard
-                    product={featuredProduct}
-                    priority
-                    catalogProducts={catalogProducts}
-                  />
+                  <ProductCard product={featuredProduct} priority />
                 </div>
               ) : (
                 <div className="h-[400px] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-[#F3F2F1] rounded-xl">

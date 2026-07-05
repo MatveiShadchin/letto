@@ -57,6 +57,5 @@ export const getHomePageData = cache(async () => {
   return {
     featuredProduct,
     gridProducts,
-    catalogProducts: products,
   };
 });

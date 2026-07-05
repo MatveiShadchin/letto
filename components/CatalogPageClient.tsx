@@ -339,7 +339,7 @@ export function CatalogPageClient({
           </div>
         ) : (
           <>
-            <ProductsGrid products={paginatedProducts} catalogProducts={products} />
+            <ProductsGrid products={paginatedProducts} />
 
             {filteredProducts.length > ITEMS_PER_PAGE && (
               <div className="mt-12 flex flex-col items-center gap-4">

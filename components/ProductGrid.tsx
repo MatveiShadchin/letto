@@ -1,13 +1,7 @@
 import { ProductCard } from './ProductCard';
 import { Product } from '@/types/product';
 
-export function ProductGrid({
-  products,
-  catalogProducts,
-}: {
-  products: Product[];
-  catalogProducts?: Product[];
-}) {
+export function ProductGrid({ products }: { products: Product[] }) {
   if (products.length === 0) {
     return (
       <section className="max-w-7xl mx-auto px-4 py-12">
@@ -37,7 +31,6 @@ export function ProductGrid({
             key={product.id}
             product={product}
             priority={index < 4}
-            catalogProducts={catalogProducts ?? products}
           />
         ))}
       </div>

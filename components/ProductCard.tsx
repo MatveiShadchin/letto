@@ -12,11 +12,9 @@ import { Product } from '@/types/product';
 export function ProductCard({
   product,
   priority = false,
-  catalogProducts,
 }: {
   product: Product;
   priority?: boolean;
-  catalogProducts?: Product[];
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { addToCart } = useCart();
@@ -73,7 +71,6 @@ export function ProductCard({
         product={product}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        catalogProducts={catalogProducts}
       />
     </>
   );

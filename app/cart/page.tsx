@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CartRecommendations } from '@/components/CartRecommendations';
 import { FloristHoursNotice } from '@/components/FloristHoursNotice';
 import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
@@ -125,6 +126,8 @@ export default function CartPage() {
                   </div>
                 ))}
               </div>
+
+              <CartRecommendations />
 
               <PostcardSection
                 className="mt-6"

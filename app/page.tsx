@@ -7,7 +7,7 @@ import { getProductImageUrl } from '@/lib/product-image-url';
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const { featuredProduct, gridProducts, catalogProducts } = await getHomePageData();
+  const { featuredProduct, gridProducts } = await getHomePageData();
   const featuredImageUrl = featuredProduct
     ? getProductImageUrl(featuredProduct.image_url, 400, 400)
     : null;
@@ -17,8 +17,8 @@ export default async function Home() {
       {featuredImageUrl ? (
         <link rel="preload" as="image" href={featuredImageUrl} />
       ) : null}
-      <Hero featuredProduct={featuredProduct} catalogProducts={catalogProducts} />
-      <ProductGrid products={gridProducts} catalogProducts={catalogProducts} />
+      <Hero featuredProduct={featuredProduct} />
+      <ProductGrid products={gridProducts} />
       <OurAdvantages />
     </>
   );

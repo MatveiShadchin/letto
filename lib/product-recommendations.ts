@@ -27,16 +27,48 @@ function normalizeCategory(value: string): string {
 }
 
 export function getRecommendationTitle(productCategory: string): string {
-  const cat = normalizeCategory(productCategory);
-  if (['букеты', 'монобукеты', 'гиганты', 'композиции'].includes(cat)) {
-    return 'Дополните букет';
-  }
-  return 'Рекомендуем к покупке';
+  return isBouquetCategory(productCategory) ? 'Дополните букет' : 'Рекомендуем к покупке';
 }
 
 export function getCategoryLabel(category: string): string {
   const key = normalizeCategory(category);
   return CATEGORY_LABELS[key] ?? category;
+}
+
+const BOUQUET_CATEGORIES = ['букеты', 'монобукеты', 'гиганты', 'композиции'];
+
+function isBouquetCategory(category: string): boolean {
+  return BOUQUET_CATEGORIES.includes(normalizeCategory(category));
+}
+
+export function getCartRecommendationTitle(cartItems: Product[]): string {
+  return cartItems.some((item) => isBouquetCategory(item.category))
+    ? 'Дополните букет'
+    : 'Рекомендуем к покупке';
+}
+
+export function getCartRecommendedProducts(
+  cartItems: Product[],
+  allProducts: Product[],
+  limit = 4
+): Product[] {
+  const inCartIds = new Set(cartItems.map((item) => item.id));
+  const seen = new Set<string>(inCartIds);
+  const picked: Product[] = [];
+
+  for (const cartItem of cartItems) {
+    if (picked.length >= limit) break;
+
+    const recommendations = getRecommendedProducts(cartItem, allProducts, limit);
+    for (const item of recommendations) {
+      if (picked.length >= limit) break;
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      picked.push(item);
+    }
+  }
+
+  return picked.slice(0, limit);
 }
 
 export function getRecommendedProducts(

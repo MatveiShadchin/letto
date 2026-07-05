@@ -3,11 +3,9 @@ import { ProductCard } from './ProductCard';
 
 interface ProductsGridProps {
   products: Product[];
-  catalogProducts?: Product[];
 }
 
-export function ProductsGrid({ products, catalogProducts }: ProductsGridProps) {
-  const allProducts = catalogProducts ?? products;
+export function ProductsGrid({ products }: ProductsGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {products.map((product, index) => (
@@ -15,7 +13,6 @@ export function ProductsGrid({ products, catalogProducts }: ProductsGridProps) {
           key={product.id}
           product={product}
           priority={index < 3}
-          catalogProducts={allProducts}
         />
       ))}
     </div>

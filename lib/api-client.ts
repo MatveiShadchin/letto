@@ -16,7 +16,14 @@ export async function apiJson<T>(
   try {
     data = await response.json();
   } catch {
-    throw new Error('Сервер вернул некорректный ответ');
+    if (response.status >= 502 && response.status <= 504) {
+      throw new Error('Сервер временно недоступен. Подождите минуту и попробуйте снова.');
+    }
+    throw new Error(
+      response.ok
+        ? 'Сервер вернул некорректный ответ'
+        : `Ошибка сервера (${response.status}). Попробуйте ещё раз.`
+    );
   }
 
   if (!response.ok) {

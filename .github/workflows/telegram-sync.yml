@@ -18,6 +18,7 @@ jobs:
           set -euo pipefail
           if [ -z "${BOT_TOKEN:-}" ] || [ -z "${SYNC_SECRET:-}" ]; then
             echo "TELEGRAM_BOT_TOKEN or TELEGRAM_WEBHOOK_SECRET not set in repo secrets"
+            echo "GitHub → Settings → Secrets → Actions → add both secrets"
             exit 0
           fi
           BASE="${SERVER_URL:-http://147.45.158.254}"
@@ -37,6 +38,36 @@ jobs:
             -d "{\"updates\":$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.result||[]))})")}")
           echo "server HTTP $HTTP"
           cat /tmp/sync-response.json
+          export UPDATES_JSON="$UPDATES"
+          node <<'NODE'
+          const updates = JSON.parse(process.env.UPDATES_JSON || '{"result":[]}').result || [];
+          const token = process.env.BOT_TOKEN;
+          const orderRe = /^\/start(?:@[\w_]+)?\s+order_([0-9a-f-]{36})/i;
+          (async () => {
+            for (const update of updates) {
+              const text = update?.message?.text || '';
+              const chatId = update?.message?.chat?.id;
+              const match = text.match(orderRe);
+              if (!match || !chatId) continue;
+              const shortId = match[1].slice(0, 8);
+              const body = [
+                `🌸 LETTO — заказ №${shortId} принят`,
+                '',
+                'Мы свяжемся с вами для подтверждения.',
+              ].join('\n');
+              const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: body }),
+              });
+              const data = await res.json();
+              console.log('direct send', chatId, data.ok ? 'ok' : data.description);
+            }
+          })().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          NODE
           if [ "$HTTP" != "200" ]; then
             exit 1
           fi

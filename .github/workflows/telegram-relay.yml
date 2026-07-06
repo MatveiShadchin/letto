@@ -1,0 +1,34 @@
+name: Telegram relay (обход блокировки api.telegram.org на VPS в РФ)
+
+on:
+  repository_dispatch:
+    types: [telegram_notify]
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram messages
+        env:
+          PAYLOAD: ${{ toJson(github.event.client_payload) }}
+        run: |
+          node <<'NODE'
+          const payload = JSON.parse(process.env.PAYLOAD || '{}');
+          const token = payload.token;
+          if (!token) {
+            console.error('token missing in client_payload');
+            process.exit(1);
+          }
+          const messages = Array.isArray(payload.messages) ? payload.messages : [];
+          for (const msg of messages) {
+            if (!msg?.chat_id || !msg?.text) continue;
+            const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: msg.chat_id, text: msg.text }),
+            });
+            const data = await res.json();
+            console.log(msg.chat_id, data.ok ? 'ok' : data.description);
+            if (!data.ok) process.exitCode = 1;
+          }
+          NODE

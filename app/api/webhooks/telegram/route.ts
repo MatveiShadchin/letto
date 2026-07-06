@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { messagingConfig } from '@/lib/notifications/config';
-import { saveMessengerLink } from '@/lib/notifications/dispatch';
+import { processTelegramUpdate } from '@/lib/notifications/telegram-inbound';
 
 function verifySecret(request: NextRequest): boolean {
   const secret = messagingConfig.telegram.webhookSecret;
@@ -15,29 +15,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const update = await request.json();
-    const message = update?.message;
-    const chatId = message?.chat?.id;
-    const text = typeof message?.text === 'string' ? message.text.trim() : '';
-    const phone = message?.contact?.phone_number as string | undefined;
-
-    if (chatId) {
-      await saveMessengerLink({
-        channel: 'telegram',
-        externalId: String(chatId),
-        phone: phone ?? null,
-        customerName: message?.from?.first_name ?? null,
-        metadata: {
-          username: message?.from?.username ?? null,
-          lastText: text || null,
-        },
-      });
-    }
-
-    // /start order_<uuid> — привязка чата к заказу (следующий этап)
-    if (text.startsWith('/start') && chatId) {
-      console.info('[telegram webhook] start', { chatId, text });
-    }
-
+    await processTelegramUpdate(update);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('POST /api/webhooks/telegram:', error);

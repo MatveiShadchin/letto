@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { VkOrderStatusLink } from '@/components/VkOrderStatusLink';
+import { TelegramOrderStatusLink } from '@/components/TelegramOrderStatusLink';
 import { MessengerContactSection, MessengerContactFormValue } from '@/components/MessengerContactSection';
 import { ProductImage } from '@/components/ProductImage';
 import { FloristHoursNotice } from '@/components/FloristHoursNotice';
@@ -39,6 +40,8 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placedPhone, setPlacedPhone] = useState('');
+  const [placedMessengerChannel, setPlacedMessengerChannel] =
+    useState<MessengerContactFormValue['channel']>('phone');
   const [placedDeliveryMethod, setPlacedDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
   const [deliverySlots, setDeliverySlots] = useState(() => getAvailableDeliverySlots());
   const [messengerContact, setMessengerContact] = useState<MessengerContactFormValue>({
@@ -119,6 +122,7 @@ export default function CheckoutPage() {
       setPlacedOrderId(result.id);
       setPlacedPhone(formData.customerPhone.trim());
       setPlacedDeliveryMethod(deliveryMethod);
+      setPlacedMessengerChannel(messengerContact.channel);
       setSuccess(true);
     } catch (err) {
       console.error('Ошибка оформления заказа:', err);
@@ -206,7 +210,10 @@ export default function CheckoutPage() {
             {formatFloristProcessingNote(placedDeliveryMethod)}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
-            {messengerContact.channel !== 'vk' && (
+            {placedMessengerChannel === 'telegram' && (
+              <TelegramOrderStatusLink orderId={placedOrderId} />
+            )}
+            {placedMessengerChannel !== 'vk' && (
               <VkOrderStatusLink customerPhone={placedPhone} orderId={placedOrderId} />
             )}
             <Link
@@ -217,9 +224,11 @@ export default function CheckoutPage() {
             </Link>
           </div>
           <p className="text-sm text-[#1A1A1A]/55 max-w-md mx-auto">
-            {messengerContact.channel === 'vk'
-              ? 'Мы свяжемся с вами во ВКонтакте по указанным данным.'
-              : 'Если выбрали ВКонтакте — можно также написать в группу для статуса заказа.'}
+            {placedMessengerChannel === 'telegram'
+              ? 'Нажмите кнопку выше и подтвердите «Запустить» в Telegram — тогда придёт сообщение о заказе. Без этого бот не сможет написать вам первым.'
+              : placedMessengerChannel === 'vk'
+                ? 'Мы свяжемся с вами во ВКонтакте по указанным данным.'
+                : 'Если выбрали ВКонтакте — можно также написать в группу для статуса заказа.'}
           </p>
         </div>
       </div>

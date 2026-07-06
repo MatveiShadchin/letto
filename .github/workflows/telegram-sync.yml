@@ -1,0 +1,37 @@
+name: Telegram sync (getUpdates без HTTPS webhook)
+
+on:
+  schedule:
+    - cron: '*/2 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll Telegram and forward to LETTO server
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SYNC_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          SERVER_URL: ${{ vars.LETTO_SERVER_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BOT_TOKEN:-}" ] || [ -z "${SYNC_SECRET:-}" ]; then
+            echo "TELEGRAM_BOT_TOKEN or TELEGRAM_WEBHOOK_SECRET not set in repo secrets"
+            exit 0
+          fi
+          BASE="${SERVER_URL:-http://147.45.158.254}"
+          OFFSET=$(curl -fsS "$BASE/api/internal/telegram-sync" \
+            -H "X-Telegram-Sync-Secret: $SYNC_SECRET" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(String(j.offset??0))})")
+          echo "offset=$OFFSET"
+          UPDATES=$(curl -fsS "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${OFFSET}&timeout=0&allowed_updates=%5B%22message%22%5D")
+          COUNT=$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);if(!j.ok){console.error(j.description||'getUpdates failed');process.exit(1)}process.stdout.write(String((j.result||[]).length))})")
+          echo "updates=$COUNT"
+          if [ "$COUNT" = "0" ]; then
+            echo "nothing to forward"
+            exit 0
+          fi
+          curl -fsS -X POST "$BASE/api/internal/telegram-sync" \
+            -H "Content-Type: application/json" \
+            -H "X-Telegram-Sync-Secret: $SYNC_SECRET" \
+            -d "{\"updates\":$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.result||[]))})")}"

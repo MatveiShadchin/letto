@@ -1,4 +1,5 @@
 import { findMessengerLinksByPhone } from '@/lib/notifications/dispatch';
+import { findTelegramChatIdByUsername, isNumericTelegramChatId } from '@/lib/notifications/telegram-resolve';
 import { normalizeOrderItems } from '@/lib/order-display';
 import { Order } from '@/types/order';
 import { NotifyChannel } from '@/types/notification';
@@ -35,22 +36,32 @@ export function normalizeOrderRow(row: Record<string, unknown>): Order {
 }
 
 export async function enrichOrderFromMessengerLinks(order: Order): Promise<Order> {
-  const hasAnyId =
-    order.telegram_chat_id ||
-    order.vk_user_id ||
-    order.whatsapp_phone ||
-    order.max_chat_id;
-
-  if (hasAnyId || !order.phone) {
-    return order;
-  }
-
-  const links = await findMessengerLinksByPhone(order.phone);
-  if (!links.length) {
-    return order;
-  }
-
   const enriched = { ...order };
+
+  if (
+    enriched.telegram_chat_id &&
+    !isNumericTelegramChatId(enriched.telegram_chat_id)
+  ) {
+    const numericId = await findTelegramChatIdByUsername(enriched.telegram_chat_id);
+    if (numericId) {
+      enriched.telegram_chat_id = numericId;
+    }
+  }
+
+  const hasAnyId =
+    enriched.telegram_chat_id ||
+    enriched.vk_user_id ||
+    enriched.whatsapp_phone ||
+    enriched.max_chat_id;
+
+  if (hasAnyId || !enriched.phone) {
+    return enriched;
+  }
+
+  const links = await findMessengerLinksByPhone(enriched.phone);
+  if (!links.length) {
+    return enriched;
+  }
 
   for (const link of links) {
     if (link.channel === 'telegram' && !enriched.telegram_chat_id) {

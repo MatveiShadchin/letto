@@ -5,10 +5,12 @@ import { telegramChannel } from '@/lib/notifications/channels/telegram';
 import { vkChannel } from '@/lib/notifications/channels/vk';
 import { whatsappChannel } from '@/lib/notifications/channels/whatsapp';
 import { pickAudienceRecipients } from '@/lib/notifications/recipients';
+import { resolveTelegramRecipientAddress } from '@/lib/notifications/telegram-resolve';
 import { buildNotificationText } from '@/lib/notifications/templates';
 import { Order } from '@/types/order';
 import {
   ChannelSendResult,
+  NotificationRecipient,
   NotifyAudience,
   NotifyChannel,
   NotifyEvent,
@@ -28,6 +30,18 @@ export interface DispatchSummary {
   results: Array<ChannelSendResult & { channel: NotifyChannel; address: string }>;
 }
 
+async function resolveRecipientAddress(
+  order: Order,
+  recipient: NotificationRecipient
+): Promise<NotificationRecipient> {
+  if (recipient.channel !== 'telegram') {
+    return recipient;
+  }
+
+  const address = await resolveTelegramRecipientAddress(order, recipient.address);
+  return address === recipient.address ? recipient : { ...recipient, address };
+}
+
 async function dispatchToRecipients(
   order: Order,
   event: NotifyEvent,
@@ -38,17 +52,22 @@ async function dispatchToRecipients(
   const results: DispatchSummary['results'] = [];
 
   for (const recipient of recipients) {
+    const resolvedRecipient = await resolveRecipientAddress(order, recipient);
     const adapter = channelAdapters[recipient.channel];
     const notification: OutboundNotification = {
       event,
       audience,
       orderId: order.id,
       text,
-      recipient,
+      recipient: resolvedRecipient,
     };
 
     const result = await sendViaChannel(adapter, notification);
-    results.push({ ...result, channel: recipient.channel, address: recipient.address });
+    results.push({
+      ...result,
+      channel: recipient.channel,
+      address: resolvedRecipient.address,
+    });
   }
 
   if (recipients.length === 0) {
@@ -63,6 +82,10 @@ export async function notifyOrderCreated(order: Order): Promise<DispatchSummary[
     dispatchToRecipients(order, 'order_created', 'customer'),
     dispatchToRecipients(order, 'order_admin_alert', 'admin'),
   ]);
+}
+
+export async function resendOrderCreatedToCustomer(order: Order): Promise<DispatchSummary> {
+  return dispatchToRecipients(order, 'order_created', 'customer');
 }
 
 export async function notifyOrderStatusChanged(

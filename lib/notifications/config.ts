@@ -12,6 +12,8 @@ export const messagingConfig = {
     adminChatId: env('TELEGRAM_ADMIN_CHAT_ID'),
     webhookSecret: env('TELEGRAM_WEBHOOK_SECRET'),
     botUsername: env('NEXT_PUBLIC_TELEGRAM_BOT_USERNAME'),
+    apiBaseUrl: env('TELEGRAM_API_BASE_URL') || 'https://api.telegram.org',
+    proxyKey: env('TELEGRAM_PROXY_KEY'),
   },
   vk: {
     groupToken: env('VK_GROUP_TOKEN'),

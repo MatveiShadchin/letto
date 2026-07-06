@@ -85,7 +85,11 @@ export async function processTelegramUpdate(update: TelegramUpdate): Promise<voi
       if (rows[0]) {
         const order = normalizeOrderRow(rows[0]);
         order.telegram_chat_id = chatIdStr;
-        await resendOrderCreatedToCustomer(order);
+        try {
+          await resendOrderCreatedToCustomer(order);
+        } catch (error) {
+          console.error('[telegram inbound] resend failed:', orderId, error);
+        }
         return;
       }
     }
@@ -113,7 +117,12 @@ export async function processTelegramUpdates(updates: TelegramUpdate[]): Promise
     if (typeof update.update_id === 'number') {
       maxUpdateId = Math.max(maxUpdateId, update.update_id);
     }
-    await processTelegramUpdate(update);
+
+    try {
+      await processTelegramUpdate(update);
+    } catch (error) {
+      console.error('[telegram inbound] update failed:', update.update_id, error);
+    }
   }
 
   return maxUpdateId;

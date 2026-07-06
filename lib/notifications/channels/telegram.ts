@@ -56,12 +56,18 @@ async function callTelegramApi<T>(method: string, body: Record<string, unknown>)
       typeof body.chat_id === 'string' &&
       typeof body.text === 'string'
     ) {
-      const relayed = await relayTelegramViaGithub(
-        [{ chat_id: body.chat_id, text: body.text }],
-        messagingConfig.telegram.botToken
-      );
-      if (relayed) {
-        return { ok: true, result: {} } as T;
+      try {
+        const relayed = await relayTelegramViaGithub(
+          [{ chat_id: body.chat_id, text: body.text }],
+          messagingConfig.telegram.botToken
+        );
+        if (relayed) {
+          return { ok: true, result: {} } as T;
+        }
+      } catch (relayError) {
+        const relayMessage =
+          relayError instanceof Error ? relayError.message : String(relayError);
+        throw new Error(`${message}; relay: ${relayMessage}`);
       }
     }
 

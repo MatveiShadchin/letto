@@ -31,7 +31,12 @@ jobs:
             echo "nothing to forward"
             exit 0
           fi
-          curl -fsS -X POST "$BASE/api/internal/telegram-sync" \
+          HTTP=$(curl -sS -o /tmp/sync-response.json -w '%{http_code}' -X POST "$BASE/api/internal/telegram-sync" \
             -H "Content-Type: application/json" \
             -H "X-Telegram-Sync-Secret: $SYNC_SECRET" \
-            -d "{\"updates\":$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.result||[]))})")}"
+            -d "{\"updates\":$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.result||[]))})")}")
+          echo "server HTTP $HTTP"
+          cat /tmp/sync-response.json
+          if [ "$HTTP" != "200" ]; then
+            exit 1
+          fi

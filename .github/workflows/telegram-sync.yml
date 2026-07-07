@@ -46,13 +46,25 @@ jobs:
           const orderRe = /^\/start(?:@[\w_]+)?\s+order_([0-9a-f-]{36})/i;
           const startOnlyRe = /^\/start(?:@[\w_]+)?$/i;
 
-          async function send(chatId, text) {
+          async function send(chatId, text, replyToMessageId) {
+            const body = { chat_id: chatId, text };
+            if (replyToMessageId) body.reply_to_message_id = replyToMessageId;
             const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ chat_id: chatId, text }),
+              body: JSON.stringify(body),
             });
             return res.json();
+          }
+
+          async function lookupCustomer(groupMessageId) {
+            const res = await fetch(
+              `${base}/api/internal/telegram-support-register?group_message_id=${groupMessageId}`,
+              { headers: { 'X-Telegram-Sync-Secret': syncSecret } }
+            );
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.found ? data : null;
           }
 
           async function registerRelay(payload) {

@@ -9,6 +9,44 @@ function verifySyncSecret(request: NextRequest): boolean {
   return request.headers.get('x-telegram-sync-secret') === secret;
 }
 
+export async function GET(request: NextRequest) {
+  if (!verifySyncSecret(request)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const groupMessageId = Number(request.nextUrl.searchParams.get('group_message_id'));
+  const groupChatId = getSupportGroupId();
+
+  if (!groupChatId || !Number.isFinite(groupMessageId)) {
+    return NextResponse.json({ error: 'Invalid query' }, { status: 400 });
+  }
+
+  if (!hasDatabase()) {
+    return NextResponse.json({ found: false });
+  }
+
+  const { rows } = await query<{
+    customer_chat_id: string;
+    customer_name: string | null;
+  }>(
+    `SELECT customer_chat_id, customer_name
+     FROM telegram_support_relay
+     WHERE group_chat_id = $1 AND group_message_id = $2
+     LIMIT 1`,
+    [groupChatId, groupMessageId]
+  );
+
+  if (!rows[0]) {
+    return NextResponse.json({ found: false });
+  }
+
+  return NextResponse.json({
+    found: true,
+    customer_chat_id: rows[0].customer_chat_id,
+    customer_name: rows[0].customer_name,
+  });
+}
+
 export async function POST(request: NextRequest) {
   if (!verifySyncSecret(request)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

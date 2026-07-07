@@ -18,13 +18,14 @@ jobs:
           set -euo pipefail
           if [ -z "${BOT_TOKEN:-}" ] || [ -z "${SYNC_SECRET:-}" ]; then
             echo "TELEGRAM_BOT_TOKEN or TELEGRAM_WEBHOOK_SECRET not set in repo secrets"
-            echo "GitHub → Settings → Secrets → Actions → add both secrets"
             exit 0
           fi
           BASE="${SERVER_URL:-http://147.45.158.254}"
-          OFFSET=$(curl -fsS "$BASE/api/internal/telegram-sync" \
-            -H "X-Telegram-Sync-Secret: $SYNC_SECRET" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(String(j.offset??0))})")
-          echo "offset=$OFFSET"
+          SYNC_META=$(curl -fsS "$BASE/api/internal/telegram-sync" \
+            -H "X-Telegram-Sync-Secret: $SYNC_SECRET")
+          OFFSET=$(echo "$SYNC_META" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(String(j.offset??0))})")
+          GROUP_ID=$(echo "$SYNC_META" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(String(j.support_group_id||''))})")
+          echo "offset=$OFFSET group=$GROUP_ID"
           UPDATES=$(curl -fsS "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${OFFSET}&timeout=0&allowed_updates=%5B%22message%22%5D")
           COUNT=$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);if(!j.ok){console.error(j.description||'getUpdates failed');process.exit(1)}process.stdout.write(String((j.result||[]).length))})")
           echo "updates=$COUNT"
@@ -32,42 +33,96 @@ jobs:
             echo "nothing to forward"
             exit 0
           fi
-          HTTP=$(curl -sS -o /tmp/sync-response.json -w '%{http_code}' -X POST "$BASE/api/internal/telegram-sync" \
-            -H "Content-Type: application/json" \
-            -H "X-Telegram-Sync-Secret: $SYNC_SECRET" \
-            -d "{\"updates\":$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.result||[]))})")}")
-          echo "server HTTP $HTTP"
-          cat /tmp/sync-response.json
           export UPDATES_JSON="$UPDATES"
+          export GROUP_ID
+          export SERVER_URL="$BASE"
+          export SYNC_SECRET
           node <<'NODE'
           const updates = JSON.parse(process.env.UPDATES_JSON || '{"result":[]}').result || [];
           const token = process.env.BOT_TOKEN;
+          const groupId = process.env.GROUP_ID;
+          const base = process.env.SERVER_URL || 'http://147.45.158.254';
+          const syncSecret = process.env.SYNC_SECRET;
           const orderRe = /^\/start(?:@[\w_]+)?\s+order_([0-9a-f-]{36})/i;
+          const startOnlyRe = /^\/start(?:@[\w_]+)?$/i;
+
+          async function send(chatId, text) {
+            const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: chatId, text }),
+            });
+            return res.json();
+          }
+
+          async function registerRelay(payload) {
+            const res = await fetch(`${base}/api/internal/telegram-support-register`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Telegram-Sync-Secret': syncSecret,
+              },
+              body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+              console.error('register failed', await res.text());
+            }
+          }
+
           (async () => {
             for (const update of updates) {
-              const text = update?.message?.text || '';
-              const chatId = update?.message?.chat?.id;
-              const match = text.match(orderRe);
-              if (!match || !chatId) continue;
-              const shortId = match[1].slice(0, 8);
-              const body = [
-                `🌸 LETTO — заказ №${shortId} принят`,
-                '',
-                'Мы свяжемся с вами для подтверждения.',
-              ].join('\n');
-              const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: chatId, text: body }),
-              });
-              const data = await res.json();
-              console.log('direct send', chatId, data.ok ? 'ok' : data.description);
+              const msg = update?.message;
+              if (!msg) continue;
+              const chatId = msg.chat?.id;
+              const text = (msg.text || '').trim();
+              const from = msg.from || {};
+              if (!chatId || from.is_bot) continue;
+
+              const orderMatch = text.match(orderRe);
+              if (orderMatch) {
+                const shortId = orderMatch[1].slice(0, 8);
+                const body = [
+                  `🌸 LETTO — заказ №${shortId} принят`,
+                  '',
+                  'Мы свяжемся с вами для подтверждения.',
+                ].join('\n');
+                const data = await send(chatId, body);
+                console.log('order notify', chatId, data.ok ? 'ok' : data.description);
+                continue;
+              }
+
+              if (chatId > 0 && groupId && text && !startOnlyRe.test(text)) {
+                const username = from.username ? `@${from.username}` : '';
+                const header = [
+                  `💬 ${from.first_name || 'Клиент'}${username ? ` (${username})` : ''}`,
+                  '📦 Сообщение с Telegram',
+                  `🆔 chat: ${chatId}`,
+                  '─────────────',
+                ].join('\n');
+                const groupText = `${header}\n${text}\n\n↩️ Ответьте реплаем на это сообщение — клиент получит ответ от LETTO.`;
+                const toGroup = await send(groupId, groupText);
+                console.log('to group', toGroup.ok ? `ok #${toGroup.result?.message_id}` : toGroup.description);
+                if (toGroup.ok && toGroup.result?.message_id) {
+                  await registerRelay({
+                    group_message_id: toGroup.result.message_id,
+                    customer_chat_id: String(chatId),
+                    customer_name: from.first_name || null,
+                  });
+                  await send(chatId, '🌸 Сообщение передано флористу. Ответим здесь в ближайшее время.');
+                }
+              }
             }
           })().catch((error) => {
             console.error(error);
             process.exitCode = 1;
           });
           NODE
+          HTTP=$(curl -sS -o /tmp/sync-response.json -w '%{http_code}' -X POST "$BASE/api/internal/telegram-sync" \
+            -H "Content-Type: application/json" \
+            -H "X-Telegram-Sync-Secret: $SYNC_SECRET" \
+            -d "{\"updates\":$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.result||[]))})")}")
+          echo "server HTTP $HTTP"
+          cat /tmp/sync-response.json
           if [ "$HTTP" != "200" ]; then
             exit 1
           fi

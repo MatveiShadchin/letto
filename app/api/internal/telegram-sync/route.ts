@@ -5,6 +5,7 @@ import {
   setTelegramUpdateOffset,
 } from '@/lib/notifications/telegram-offset';
 import { processTelegramUpdates } from '@/lib/notifications/telegram-inbound';
+import { getSupportGroupId } from '@/lib/notifications/telegram-support';
 
 function verifySyncSecret(request: NextRequest): boolean {
   const secret = messagingConfig.telegram.webhookSecret;
@@ -18,7 +19,10 @@ export async function GET(request: NextRequest) {
   }
 
   const offset = await getTelegramUpdateOffset();
-  return NextResponse.json({ offset });
+  return NextResponse.json({
+    offset,
+    support_group_id: getSupportGroupId(),
+  });
 }
 
 export async function POST(request: NextRequest) {

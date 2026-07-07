@@ -135,25 +135,32 @@ export async function forwardCustomerMessageToSupportGroup(
 
   const groupText = `${header}\n${text}\n\n↩️ Ответьте реплаем на это сообщение — клиент получит ответ от LETTO.`;
 
-  const sent = await sendTelegramMessage(groupId, groupText);
-  if (!sent?.message_id) {
+  // Пересылка в группу с VPS ненадёжна (блокировка + relay без message_id).
+  // Основной путь — GitHub Actions telegram-sync.yml (отправка напрямую из GHA).
+  try {
+    const sent = await sendTelegramMessage(groupId, groupText);
+    if (!sent?.message_id) {
+      return false;
+    }
+
+    await saveRelayMapping({
+      groupChatId: groupId,
+      groupMessageId: sent.message_id,
+      customerChatId: String(customerChatId),
+      orderId: order?.id ?? null,
+      customerName: from?.first_name ?? order?.customer_name ?? null,
+    });
+
+    await sendTelegramMessage(
+      customerChatId,
+      '🌸 Сообщение передано флористу. Ответим здесь в ближайшее время.'
+    );
+
+    return true;
+  } catch (error) {
+    console.warn('[telegram support] VPS forward skipped, GHA sync handles it:', error);
     return false;
   }
-
-  await saveRelayMapping({
-    groupChatId: groupId,
-    groupMessageId: sent.message_id,
-    customerChatId: String(customerChatId),
-    orderId: order?.id ?? null,
-    customerName: from?.first_name ?? order?.customer_name ?? null,
-  });
-
-  await sendTelegramMessage(
-    customerChatId,
-    '🌸 Сообщение передано флористу. Ответим здесь в ближайшее время.'
-  );
-
-  return true;
 }
 
 export async function relaySupportGroupReplyToCustomer(

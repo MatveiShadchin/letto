@@ -1,79 +1,12 @@
 import { messagingConfig } from '@/lib/notifications/config';
 import { MessengerChannelAdapter } from '@/lib/notifications/channel-base';
-import { relayTelegramViaGithub } from '@/lib/notifications/telegram-relay';
+import {
+  callTelegramApi,
+  normalizeTelegramChatId,
+} from '@/lib/notifications/telegram-api';
 import { ChannelSendResult, OutboundNotification } from '@/types/notification';
 
-export function normalizeTelegramChatId(address: string): string {
-  const trimmed = address.trim();
-  if (!trimmed) return trimmed;
-  if (/^-?\d+$/.test(trimmed)) return trimmed;
-  return trimmed.startsWith('@') ? trimmed : `@${trimmed}`;
-}
-
-function getTelegramApiUrl(method: string): string {
-  const token = messagingConfig.telegram.botToken;
-  const base = messagingConfig.telegram.apiBaseUrl.replace(/\/$/, '');
-  return `${base}/bot${token}/${method}`;
-}
-
-function getTelegramApiHeaders(): HeadersInit {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const proxyKey = messagingConfig.telegram.proxyKey;
-  if (proxyKey) {
-    headers['X-Letto-Tg-Proxy-Key'] = proxyKey;
-  }
-  return headers;
-}
-
-async function callTelegramApi<T>(method: string, body: Record<string, unknown>): Promise<T> {
-  try {
-    const response = await fetch(getTelegramApiUrl(method), {
-      method: 'POST',
-      headers: getTelegramApiHeaders(),
-      body: JSON.stringify(body),
-    });
-
-    const data = (await response.json()) as {
-      ok: boolean;
-      description?: string;
-      result?: { message_id?: number };
-    };
-    if (!response.ok || !data.ok) {
-      throw new Error(data.description || `Telegram API error (${response.status})`);
-    }
-
-    return data as T;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const isNetworkError =
-      message.includes('fetch failed') ||
-      message.includes('ETIMEDOUT') ||
-      message.includes('ENETUNREACH');
-
-    if (
-      isNetworkError &&
-      method === 'sendMessage' &&
-      typeof body.chat_id === 'string' &&
-      typeof body.text === 'string'
-    ) {
-      try {
-        const relayed = await relayTelegramViaGithub(
-          [{ chat_id: body.chat_id, text: body.text }],
-          messagingConfig.telegram.botToken
-        );
-        if (relayed) {
-          return { ok: true, result: {} } as T;
-        }
-      } catch (relayError) {
-        const relayMessage =
-          relayError instanceof Error ? relayError.message : String(relayError);
-        throw new Error(`${message}; relay: ${relayMessage}`);
-      }
-    }
-
-    throw error;
-  }
-}
+export { normalizeTelegramChatId, sendTelegramMessage } from '@/lib/notifications/telegram-api';
 
 export const telegramChannel: MessengerChannelAdapter = {
   channel: 'telegram',

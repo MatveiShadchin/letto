@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChannelStatuses, getPublicBotLinks } from '@/lib/notifications';
-import { isChannelConfigured } from '@/lib/notifications/config';
+import { isChannelConfigured, messagingConfig } from '@/lib/notifications/config';
+import { getSupportGroupId, isSupportGroupConfigured } from '@/lib/notifications/telegram-support';
 import { requireAdmin } from '@/lib/require-admin';
 import { getVkApiGroupId, getVkCommunityUrl } from '@/lib/vk-community';
 
@@ -10,6 +11,7 @@ export async function GET(request: NextRequest) {
 
   const baseUrl = request.nextUrl.origin;
   const vkWebhookUrl = `${baseUrl}/api/webhooks/vk`;
+  const supportGroupId = getSupportGroupId();
 
   return NextResponse.json({
     channels: getChannelStatuses(),
@@ -19,6 +21,21 @@ export async function GET(request: NextRequest) {
       vk: vkWebhookUrl,
       whatsapp: `${baseUrl}/api/webhooks/whatsapp`,
       max: `${baseUrl}/api/webhooks/max`,
+    },
+    telegramSupport: {
+      configured: isSupportGroupConfigured(),
+      supportGroupId: supportGroupId || null,
+      steps: [
+        'Создайте группу в Telegram (например «LETTO — заказы»).',
+        'Добавьте бота @' +
+          (messagingConfig.telegram.botUsername?.replace(/^@/, '') || 'letto_flowers_bot') +
+          ' в группу и дайте право читать сообщения.',
+        'В @BotFather: /setprivacy → выберите бота → Disable (иначе бот не увидит сообщения в группе).',
+        'Узнайте id группы (например через getUpdates после сообщения в группе, id вида -100…).',
+        'На сервере в .env.local: TELEGRAM_SUPPORT_GROUP_ID=-100… (можно тот же id, что TELEGRAM_ADMIN_CHAT_ID).',
+        'pm2 restart letto',
+        'Клиент пишет боту в личку → сообщение появляется в группе. Ответьте реплаем — клиент получит ответ от LETTO.',
+      ],
     },
     vkSetup: {
       communityUrl: getVkCommunityUrl(),

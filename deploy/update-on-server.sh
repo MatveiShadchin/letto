@@ -51,6 +51,7 @@ if grep -q '^DATABASE_URL=' .env.local; then
   psql "$DATABASE_URL" -f database/migrations/003_messaging_notifications.sql || true
   psql "$DATABASE_URL" -f database/migrations/004_messenger_contact_label.sql || true
   psql "$DATABASE_URL" -f database/migrations/005_telegram_sync_state.sql || true
+  psql "$DATABASE_URL" -f database/migrations/006_telegram_support_relay.sql || true
 fi
 
 echo "==> Сборка и перезапуск"

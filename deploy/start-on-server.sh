@@ -25,23 +25,31 @@ npm ci
 echo "==> Сборка"
 npm run build
 
-echo "==> Nginx → прокси на порт 3000"
-cp deploy/nginx-letto.conf /etc/nginx/sites-available/letto
-ln -sf /etc/nginx/sites-available/letto /etc/nginx/sites-enabled/letto
-rm -f /etc/nginx/sites-enabled/default
-
 SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' .env.local 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)
 DOMAIN=$(echo "$SITE_URL" | sed -E 's|https?://||' | cut -d/ -f1)
-if [ -n "$DOMAIN" ]; then
-  sed -i "s/server_name .*/server_name ${DOMAIN} www.${DOMAIN} 147.45.158.254;/" /etc/nginx/sites-available/letto
-fi
 
-nginx -t
-systemctl reload nginx
-
-if [ -n "$DOMAIN" ] && [ -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
-  echo "==> Восстановление HTTPS (certbot)"
-  certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --redirect || true
+if [ -n "$DOMAIN" ] && [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+  echo "==> HTTPS nginx (${DOMAIN})"
+  cp deploy/nginx-letto.conf /etc/nginx/sites-available/letto
+  ln -sf /etc/nginx/sites-available/letto /etc/nginx/sites-enabled/letto
+  rm -f /etc/nginx/sites-enabled/default
+  nginx -t
+  systemctl reload nginx
+elif [ -n "$DOMAIN" ]; then
+  echo "==> Nginx HTTP-only (сертификат не найден для ${DOMAIN})"
+  sed "s/testletto.ru/${DOMAIN}/g" deploy/nginx-letto.conf > /tmp/nginx-letto-http.conf
+  cp /tmp/nginx-letto-http.conf /etc/nginx/sites-available/letto
+  ln -sf /etc/nginx/sites-available/letto /etc/nginx/sites-enabled/letto
+  rm -f /etc/nginx/sites-enabled/default
+  nginx -t
+  systemctl reload nginx
+else
+  echo "==> Nginx → прокси на порт 3000"
+  cp deploy/nginx-letto.conf /etc/nginx/sites-available/letto
+  ln -sf /etc/nginx/sites-available/letto /etc/nginx/sites-enabled/letto
+  rm -f /etc/nginx/sites-enabled/default
+  nginx -t
+  systemctl reload nginx
 fi
 
 echo "==> PM2"
@@ -50,5 +58,5 @@ pm2 start deploy/ecosystem.config.cjs
 pm2 save
 
 echo ""
-echo "Готово. Откройте: http://147.45.158.254"
+echo "Готово. Откройте: https://testletto.ru"
 pm2 status

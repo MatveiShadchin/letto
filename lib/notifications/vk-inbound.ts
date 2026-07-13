@@ -1,4 +1,5 @@
 import { hasDatabase, query } from '@/lib/db';
+import { getPublicSiteUrl } from '@/lib/site-url';
 import { sendVkMessage } from '@/lib/notifications/channels/vk';
 import { saveMessengerLink } from '@/lib/notifications/dispatch';
 import { normalizeOrderRow } from '@/lib/notifications/order-utils';
@@ -87,7 +88,7 @@ export async function handleVkInboundMessage(input: {
     if (linked.length === 0) {
       await sendVkMessage(
         vkUserId,
-        'Заказ с таким телефоном не найден. Оформите заказ на сайте или проверьте номер.\n\nСайт: http://147.45.158.254'
+        `Заказ с таким телефоном не найден. Оформите заказ на сайте или проверьте номер.\n\nСайт: ${getPublicSiteUrl()}`
       );
       return;
     }

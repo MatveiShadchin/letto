@@ -1,5 +1,5 @@
 #!/bin/bash
-# Настройка домена toastbetter.ru на сервере LETTO
+# Настройка домена testietto.ru на сервере LETTO
 # Запуск на сервере: bash deploy/setup-domain.sh [domain] [email]
 #
 # Перед запуском в Timeweb DNS:
@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-DOMAIN="${1:-toastbetter.ru}"
+DOMAIN="${1:-testietto.ru}"
 EMAIL="${2:-admin@${DOMAIN}}"
 APP_DIR="/var/www/letto"
 ENV_FILE="${APP_DIR}/.env.local"

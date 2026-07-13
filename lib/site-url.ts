@@ -1,4 +1,4 @@
-const DEFAULT_DOMAIN = 'toastbetter.ru';
+const DEFAULT_DOMAIN = 'testietto.ru';
 
 export function getSiteDomain(): string {
   const fromEnv =

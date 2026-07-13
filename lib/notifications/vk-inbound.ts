@@ -87,7 +87,7 @@ export async function handleVkInboundMessage(input: {
     if (linked.length === 0) {
       await sendVkMessage(
         vkUserId,
-        'Заказ с таким телефоном не найден. Оформите заказ на сайте или проверьте номер.\n\nСайт: http://147.45.158.254'
+        'Заказ с таким телефоном не найден. Оформите заказ на сайте или проверьте номер.\n\nСайт: https://testletto.ru'
       );
       return;
     }

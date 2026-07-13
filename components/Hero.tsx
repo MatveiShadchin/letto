@@ -6,7 +6,7 @@ import { ProductCard } from './ProductCard';
 export function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#F3F2F1] to-white min-h-[600px]">
-      <div className="container mx-auto px-4 py-16 md:py-24">
+      <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <div>
@@ -67,14 +67,14 @@ export function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
               )}
             </div>
 
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-[#F3F2F1] rounded-full -z-10" />
-            <div className="absolute -top-6 -right-6 w-40 h-40 bg-[#F3F2F1]/50 rounded-full -z-10" />
+            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-[#F3F2F1] rounded-full -z-10 pointer-events-none" />
+            <div className="absolute -top-6 -right-6 w-40 h-40 bg-[#F3F2F1]/50 rounded-full -z-10 pointer-events-none" />
           </div>
         </div>
       </div>
 
-      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#F3F2F1]/30 to-transparent rounded-full -translate-y-32 translate-x-32" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#F3F2F1] to-transparent rounded-full -translate-x-48 translate-y-48" />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#F3F2F1]/30 to-transparent rounded-full -translate-y-32 translate-x-32 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#F3F2F1] to-transparent rounded-full -translate-x-48 translate-y-48 pointer-events-none" />
     </section>
   );
 }

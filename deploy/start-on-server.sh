@@ -25,10 +25,21 @@ npm ci
 echo "==> Сборка"
 npm run build
 
-echo "==> Nginx → прокси на порт 3000"
+SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' .env.local 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)
+DOMAIN=$(echo "$SITE_URL" | sed -E 's|https?://||' | cut -d/ -f1)
+
+echo "==> Nginx"
 cp deploy/nginx-letto.conf /etc/nginx/sites-available/letto
 ln -sf /etc/nginx/sites-available/letto /etc/nginx/sites-enabled/letto
 rm -f /etc/nginx/sites-enabled/default
+
+if [ -n "$DOMAIN" ] && [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+  echo "HTTPS: сертификат ${DOMAIN} найден"
+elif [ -n "$DOMAIN" ]; then
+  echo "HTTP-only: сертификат для ${DOMAIN} не найден"
+  sed -i "s/testletto.ru/${DOMAIN}/g" /etc/nginx/sites-available/letto
+fi
+
 nginx -t
 systemctl reload nginx
 
@@ -38,5 +49,5 @@ pm2 start deploy/ecosystem.config.cjs
 pm2 save
 
 echo ""
-echo "Готово. Откройте: http://147.45.158.254"
+echo "Готово. Откройте: https://testletto.ru"
 pm2 status

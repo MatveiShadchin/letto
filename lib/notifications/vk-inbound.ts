@@ -1,3 +1,4 @@
+import { hasDatabase, query } from '@/lib/db';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { sendVkMessage } from '@/lib/notifications/channels/vk';
 import { saveMessengerLink } from '@/lib/notifications/dispatch';

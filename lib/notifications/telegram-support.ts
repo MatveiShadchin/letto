@@ -1,6 +1,7 @@
 import { hasDatabase, query } from '@/lib/db';
 import { messagingConfig } from '@/lib/notifications/config';
 import { sendTelegramMessage } from '@/lib/notifications/telegram-api';
+import { relaySupportForwardViaGithub } from '@/lib/notifications/telegram-relay';
 import { TelegramUpdate } from '@/lib/notifications/telegram-types';
 
 const ORDER_START_RE = /^\/start(?:@[\w_]+)?(?:\s+order_([0-9a-f-]{36}))?/i;
@@ -135,30 +136,40 @@ export async function forwardCustomerMessageToSupportGroup(
 
   const groupText = `${header}\n${text}\n\n↩️ Ответьте реплаем на это сообщение — клиент получит ответ от LETTO.`;
 
-  // Пересылка в группу с VPS ненадёжна (блокировка + relay без message_id).
-  // Основной путь — GitHub Actions telegram-sync.yml (отправка напрямую из GHA).
+  const relayPayload = {
+    groupId,
+    groupText,
+    customerChatId: String(customerChatId),
+    customerName: from?.first_name ?? order?.customer_name ?? null,
+    orderId: order?.id ?? null,
+  };
+
   try {
     const sent = await sendTelegramMessage(groupId, groupText);
-    if (!sent?.message_id) {
-      return false;
+    if (sent?.message_id) {
+      await saveRelayMapping({
+        groupChatId: groupId,
+        groupMessageId: sent.message_id,
+        customerChatId: String(customerChatId),
+        orderId: order?.id ?? null,
+        customerName: from?.first_name ?? order?.customer_name ?? null,
+      });
+
+      await sendTelegramMessage(
+        customerChatId,
+        '🌸 Сообщение передано флористу. Ответим здесь в ближайшее время.'
+      );
+
+      return true;
     }
-
-    await saveRelayMapping({
-      groupChatId: groupId,
-      groupMessageId: sent.message_id,
-      customerChatId: String(customerChatId),
-      orderId: order?.id ?? null,
-      customerName: from?.first_name ?? order?.customer_name ?? null,
-    });
-
-    await sendTelegramMessage(
-      customerChatId,
-      '🌸 Сообщение передано флористу. Ответим здесь в ближайшее время.'
-    );
-
-    return true;
   } catch (error) {
-    console.warn('[telegram support] VPS forward skipped, GHA sync handles it:', error);
+    console.warn('[telegram support] direct forward failed, using GHA:', error);
+  }
+
+  try {
+    return await relaySupportForwardViaGithub(relayPayload);
+  } catch (error) {
+    console.error('[telegram support] GHA forward failed:', error);
     return false;
   }
 }

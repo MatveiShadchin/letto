@@ -1,0 +1,87 @@
+name: Telegram support forward (клиент → группа флористов)
+
+on:
+  repository_dispatch:
+    types: [telegram_support_forward]
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Forward client message to florist group
+        env:
+          PAYLOAD: ${{ toJson(github.event.client_payload) }}
+          SYNC_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          SERVER_URL: ${{ vars.LETTO_SERVER_URL }}
+        run: |
+          node <<'NODE'
+          const payload = JSON.parse(process.env.PAYLOAD || '{}');
+          const token = payload.token;
+          const groupId = payload.group_id;
+          const groupText = payload.group_text;
+          const customerChatId = payload.customer_chat_id;
+          const customerName = payload.customer_name || null;
+          const orderId = payload.order_id || null;
+          const syncSecret = process.env.SYNC_SECRET;
+          const base = (process.env.SERVER_URL || 'https://testletto.ru').replace(/\/$/, '');
+
+          if (!token || !groupId || !groupText || !customerChatId) {
+            console.error('missing required fields in payload');
+            process.exit(1);
+          }
+
+          async function send(chatId, text, replyToMessageId) {
+            const body = { chat_id: chatId, text };
+            if (replyToMessageId) body.reply_to_message_id = replyToMessageId;
+            const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            return res.json();
+          }
+
+          async function registerRelay(groupMessageId) {
+            if (!syncSecret) {
+              console.warn('TELEGRAM_WEBHOOK_SECRET not set — relay mapping skipped');
+              return;
+            }
+            const res = await fetch(`${base}/api/internal/telegram-support-register`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Telegram-Sync-Secret': syncSecret,
+              },
+              body: JSON.stringify({
+                group_message_id: groupMessageId,
+                customer_chat_id: customerChatId,
+                customer_name: customerName,
+                order_id: orderId,
+              }),
+            });
+            if (!res.ok) {
+              console.error('register failed', await res.text());
+              process.exitCode = 1;
+            }
+          }
+
+          (async () => {
+            const toGroup = await send(groupId, groupText);
+            console.log('to group', toGroup.ok ? `ok #${toGroup.result?.message_id}` : toGroup.description);
+            if (!toGroup.ok || !toGroup.result?.message_id) {
+              process.exit(1);
+            }
+
+            await registerRelay(toGroup.result.message_id);
+
+            const confirm = await send(
+              customerChatId,
+              '🌸 Сообщение передано флористу. Ответим здесь в ближайшее время.'
+            );
+            console.log('to customer', confirm.ok ? 'ok' : confirm.description);
+            if (!confirm.ok) process.exitCode = 1;
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE

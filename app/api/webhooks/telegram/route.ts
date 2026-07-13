@@ -15,7 +15,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const update = await request.json();
-    await processTelegramUpdate(update);
+    void processTelegramUpdate(update).catch((error) => {
+      console.error('POST /api/webhooks/telegram async:', error);
+    });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('POST /api/webhooks/telegram:', error);

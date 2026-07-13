@@ -58,4 +58,4 @@ echo "==> Сборка и перезапуск"
 bash deploy/start-on-server.sh
 
 rm -f "$ARCHIVE"
-echo "Готово: https://testietto.ru"
+echo "Готово: https://testletto.ru"

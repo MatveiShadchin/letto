@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
  * Установка Telegram webhook на HTTPS-домен (запускать с ПК/CI, не с VPS в РФ).
- * Usage: node deploy/set-telegram-webhook.mjs [https://testietto.ru]
+ * Usage: node deploy/set-telegram-webhook.mjs [https://testletto.ru]
  */
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const baseUrl = (process.argv[2] || 'https://testietto.ru').replace(/\/$/, '');
+const baseUrl = (process.argv[2] || 'https://testletto.ru').replace(/\/$/, '');
 
 function loadEnv() {
   try {

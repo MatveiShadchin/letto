@@ -20,7 +20,7 @@ jobs:
             echo "TELEGRAM_BOT_TOKEN or TELEGRAM_WEBHOOK_SECRET not set in repo secrets"
             exit 0
           fi
-          BASE="${SERVER_URL:-https://testietto.ru}"
+          BASE="${SERVER_URL:-https://testletto.ru}"
           SYNC_META=$(curl -fsS "$BASE/api/internal/telegram-sync" \
             -H "X-Telegram-Sync-Secret: $SYNC_SECRET")
           OFFSET=$(echo "$SYNC_META" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(String(j.offset??0))})")
@@ -41,7 +41,7 @@ jobs:
           const updates = JSON.parse(process.env.UPDATES_JSON || '{"result":[]}').result || [];
           const token = process.env.BOT_TOKEN;
           const groupId = process.env.GROUP_ID;
-          const base = process.env.SERVER_URL || 'https://testietto.ru';
+          const base = process.env.SERVER_URL || 'https://testletto.ru';
           const syncSecret = process.env.SYNC_SECRET;
           const orderRe = /^\/start(?:@[\w_]+)?\s+order_([0-9a-f-]{36})/i;
           const startOnlyRe = /^\/start(?:@[\w_]+)?$/i;

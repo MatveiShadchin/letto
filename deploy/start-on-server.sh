@@ -29,8 +29,20 @@ echo "==> Nginx → прокси на порт 3000"
 cp deploy/nginx-letto.conf /etc/nginx/sites-available/letto
 ln -sf /etc/nginx/sites-available/letto /etc/nginx/sites-enabled/letto
 rm -f /etc/nginx/sites-enabled/default
+
+SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' .env.local 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)
+DOMAIN=$(echo "$SITE_URL" | sed -E 's|https?://||' | cut -d/ -f1)
+if [ -n "$DOMAIN" ]; then
+  sed -i "s/server_name .*/server_name ${DOMAIN} www.${DOMAIN} 147.45.158.254;/" /etc/nginx/sites-available/letto
+fi
+
 nginx -t
 systemctl reload nginx
+
+if [ -n "$DOMAIN" ] && [ -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
+  echo "==> Восстановление HTTPS (certbot)"
+  certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --redirect || true
+fi
 
 echo "==> PM2"
 pm2 delete letto 2>/dev/null || true

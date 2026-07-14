@@ -26,7 +26,12 @@ jobs:
           OFFSET=$(echo "$SYNC_META" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(String(j.offset??0))})")
           GROUP_ID=$(echo "$SYNC_META" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);process.stdout.write(String(j.support_group_id||''))})")
           echo "offset=$OFFSET group=$GROUP_ID"
-          UPDATES=$(curl -fsS "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${OFFSET}&timeout=0&allowed_updates=%5B%22message%22%5D")
+          UPDATES=$(curl -sS "https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${OFFSET}&timeout=0&allowed_updates=%5B%22message%22%5D")
+          # Webhook активен → getUpdates недоступен. Instant-путь: webhook + telegram-support-forward.
+          if echo "$UPDATES" | grep -qi 'webhook is active\|Conflict'; then
+            echo "webhook active — sync polling skipped (instant delivery via HTTPS webhook)"
+            exit 0
+          fi
           COUNT=$(echo "$UPDATES" | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s);if(!j.ok){console.error(j.description||'getUpdates failed');process.exit(1)}process.stdout.write(String((j.result||[]).length))})")
           echo "updates=$COUNT"
           if [ "$COUNT" = "0" ]; then

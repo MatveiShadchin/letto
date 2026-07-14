@@ -2,7 +2,8 @@ name: Telegram sync (getUpdates без HTTPS webhook)
 
 on:
   schedule:
-    - cron: '*/2 * * * *'
+    # Каждую минуту — быстрая доставка без webhook (Telegram→VPS в РФ часто таймаутит)
+    - cron: '* * * * *'
   workflow_dispatch:
 
 jobs:

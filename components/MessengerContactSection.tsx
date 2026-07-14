@@ -148,9 +148,9 @@ export function MessengerContactSection({
           {value.channel === 'vk' && (
             <div className="rounded-xl border border-[#C5D9F5] bg-[#F0F6FF] px-4 py-4 space-y-3">
               <p className="text-sm text-[#1A1A1A]/85 leading-relaxed">
-                Чтобы мы могли присылать статус заказа во ВКонтакте,{' '}
-                <strong>один раз напишите нашему сообществу</strong> — ВК не разрешает писать
-                первым только по @username.
+                Чтобы получать статус во ВКонтакте, нужно один раз написать сообществу — ВК не
+                разрешает писать первым только по @username. После оформления заказа мы{' '}
+                <strong>откроем чат с номером заказа</strong> — останется нажать «Отправить».
               </p>
               <p className="text-xs text-[#1A1A1A]/65">
                 После сообщения укажите телефон с заказа — мы привяжем чат и будем присылать

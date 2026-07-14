@@ -34,6 +34,24 @@ export function getVkWriteUrl(prefillMessage?: string): string {
   return `https://vk.me/club${groupId}`;
 }
 
+/** Сообщение в группу с телефоном и номером заказа (для статуса после оформления) */
+export function getVkOrderStatusWriteUrl(input?: {
+  customerPhone?: string | null;
+  orderId?: string | null;
+}): string {
+  const shortId = input?.orderId ? input.orderId.slice(0, 8) : null;
+  const phone = input?.customerPhone?.trim() || null;
+  const prefill = [
+    'Здравствуйте! Заказ с сайта LETTO.',
+    phone ? `Телефон: ${phone}` : null,
+    shortId ? `Номер заказа: ${shortId}` : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return getVkWriteUrl(prefill);
+}
+
 export function getVkApiGroupId(): number {
   const id = Number(getVkGroupId());
   return Number.isFinite(id) ? id : Number(DEFAULT_VK_GROUP_ID);

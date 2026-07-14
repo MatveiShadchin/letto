@@ -1,35 +1,39 @@
-import { getVkWriteUrl } from '@/lib/vk-community';
+'use client';
+
+import { useEffect } from 'react';
+import { getVkOrderStatusWriteUrl } from '@/lib/vk-community';
 
 interface VkOrderStatusLinkProps {
   customerPhone?: string;
   orderId?: string | null;
   className?: string;
+  /** Сразу открыть чат ВК с номером заказа (после оформления) */
+  autoRedirect?: boolean;
 }
 
 export function VkOrderStatusLink({
   customerPhone,
   orderId,
   className = '',
+  autoRedirect = false,
 }: VkOrderStatusLinkProps) {
-  const shortId = orderId ? orderId.slice(0, 8) : null;
-  const prefill = [
-    'Здравствуйте! Заказ с сайта LETTO.',
-    customerPhone ? `Телефон: ${customerPhone}` : null,
-    shortId ? `Номер заказа: ${shortId}` : null,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const href = getVkOrderStatusWriteUrl({ customerPhone, orderId });
 
-  const href = getVkWriteUrl(prefill);
+  useEffect(() => {
+    if (!autoRedirect || !href) return;
+    // Небольшая пауза — клиент успевает увидеть «Заказ оформлен»
+    const timer = window.setTimeout(() => {
+      window.location.assign(href);
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [autoRedirect, href]);
 
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
       className={`inline-flex items-center justify-center gap-2 rounded-xl bg-[#0077FF] text-white hover:bg-[#0066DD] px-6 py-3 font-medium transition-colors ${className}`}
     >
-      Написать сообществу ВК
+      {autoRedirect ? 'Открываем ВК…' : 'Написать сообществу ВК'}
     </a>
   );
 }

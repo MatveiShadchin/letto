@@ -214,7 +214,11 @@ export default function CheckoutPage() {
               <TelegramOrderStatusLink orderId={placedOrderId} />
             )}
             {placedMessengerChannel === 'vk' && (
-              <VkOrderStatusLink customerPhone={placedPhone} orderId={placedOrderId} />
+              <VkOrderStatusLink
+                customerPhone={placedPhone}
+                orderId={placedOrderId}
+                autoRedirect
+              />
             )}
             {placedMessengerChannel !== 'telegram' && placedMessengerChannel !== 'vk' && (
               <VkOrderStatusLink customerPhone={placedPhone} orderId={placedOrderId} />
@@ -230,7 +234,7 @@ export default function CheckoutPage() {
             {placedMessengerChannel === 'telegram'
               ? 'Нажмите кнопку выше и подтвердите «Запустить» в Telegram — тогда придёт сообщение о заказе. Без этого бот не сможет написать вам первым.'
               : placedMessengerChannel === 'vk'
-                ? 'Нажмите синюю кнопку и отправьте сообщение сообществу LETTO во ВКонтакте — так мы сможем присылать статус заказа. Без этого ВК не разрешает писать первым.'
+                ? 'Через секунду откроется чат с сообществом LETTO — в сообщении уже будут телефон и номер заказа. Нажмите «Отправить» во ВК, чтобы получать статусы.'
                 : 'Можно также получать статус во ВКонтакте — нажмите синюю кнопку и один раз напишите сообществу.'}
           </p>
         </div>

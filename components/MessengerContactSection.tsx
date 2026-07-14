@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { ClipboardPaste } from 'lucide-react';
+import { ClipboardPaste, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   CHECKOUT_CONTACT_OPTIONS,
   CheckoutContactChannel,
   getCheckoutContactOption,
 } from '@/lib/messenger-contact';
+import { getVkWriteUrl } from '@/lib/vk-community';
 import { cn } from '@/lib/utils';
 
 export interface MessengerContactFormValue {
@@ -143,6 +144,36 @@ export function MessengerContactSection({
             </div>
             {pasteHint && <p className="mt-2 text-xs text-[#1A1A1A]/60">{pasteHint}</p>}
           </div>
+
+          {value.channel === 'vk' && (
+            <div className="rounded-xl border border-[#C5D9F5] bg-[#F0F6FF] px-4 py-4 space-y-3">
+              <p className="text-sm text-[#1A1A1A]/85 leading-relaxed">
+                Чтобы мы могли присылать статус заказа во ВКонтакте,{' '}
+                <strong>один раз напишите нашему сообществу</strong> — ВК не разрешает писать
+                первым только по @username.
+              </p>
+              <p className="text-xs text-[#1A1A1A]/65">
+                После сообщения укажите телефон с заказа — мы привяжем чат и будем присылать
+                обновления сюда.
+              </p>
+              <a
+                href={getVkWriteUrl(
+                  [
+                    'Здравствуйте! Оформляю заказ на LETTO.',
+                    customerPhone.trim() ? `Телефон: ${customerPhone.trim()}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' ')
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0077FF] text-white hover:bg-[#0066DD] px-4 py-2.5 text-sm font-medium transition-colors"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Написать сообществу ВК
+              </a>
+            </div>
+          )}
 
           {value.channel === 'whatsapp' && customerPhone.trim() && (
             <label className="flex items-start gap-3 rounded-xl border border-[#E8E4E0] bg-[#FAFAF9] px-4 py-3 cursor-pointer">

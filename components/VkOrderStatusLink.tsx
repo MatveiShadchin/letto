@@ -29,7 +29,7 @@ export function VkOrderStatusLink({
       rel="noopener noreferrer"
       className={`inline-flex items-center justify-center gap-2 rounded-xl bg-[#0077FF] text-white hover:bg-[#0066DD] px-6 py-3 font-medium transition-colors ${className}`}
     >
-      Получать статус заказа в ВКонтакте
+      Написать сообществу ВК
     </a>
   );
 }

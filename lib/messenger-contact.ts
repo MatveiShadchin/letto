@@ -17,7 +17,7 @@ export const CHECKOUT_CONTACT_OPTIONS: Array<{
   {
     value: 'vk',
     label: 'ВКонтакте',
-    hint: 'Ссылка на профиль или id пользователя',
+    hint: 'Ссылка vk.com/id… или числовой id (username недостаточно для автоуведомлений)',
     placeholder: 'vk.com/id123456 или id123456',
   },
   {

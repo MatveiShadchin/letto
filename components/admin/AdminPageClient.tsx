@@ -25,7 +25,7 @@ export function AdminPageClient({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#FAFAF9] text-[#1A1A1A]">
+      <div className="flex items-center justify-center min-h-screen bg-[#F3F2F1] text-[#1A1A1A]">
         Загрузка...
       </div>
     );

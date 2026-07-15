@@ -181,7 +181,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
               className={`flex items-center justify-center gap-2 w-full max-w-xs px-4 py-3 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
                 uploading
                   ? 'border-gray-300 bg-gray-50 cursor-wait'
-                  : 'border-[#5E4037] bg-[#F9F5F0] hover:bg-[#F3EBE6]'
+                  : 'border-gray-400 bg-gray-50 hover:bg-gray-100'
               }`}
             >
               {uploading ? (
@@ -230,13 +230,13 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
 
         <div>
           <Label htmlFor="category">Категория</Label>
-          <Select value={category} onValueChange={setCategory} required>
-            <SelectTrigger>
+          <Select value={category || undefined} onValueChange={setCategory} required>
+            <SelectTrigger className="rounded-xl border-gray-300 bg-white">
               <SelectValue placeholder="Выберите категорию" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[1100] bg-white border-gray-200">
               {categoryOptions.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
+                <SelectItem key={item.value} value={item.value} className="cursor-pointer">
                   {item.label}
                 </SelectItem>
               ))}
@@ -280,7 +280,11 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           <Button variant="outline" type="button" onClick={onCancel}>
             Отмена
           </Button>
-          <Button type="submit" disabled={uploading} variant="brand">
+          <Button
+            type="submit"
+            disabled={uploading}
+            className="bg-[#2D2D2D] text-white hover:bg-[#3D3D3D] hover:text-white"
+          >
             {product ? 'Обновить' : 'Добавить'} товар
           </Button>
         </div>

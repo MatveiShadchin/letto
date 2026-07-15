@@ -38,11 +38,11 @@ export function LoginForm({ onLogin }: { onLogin: () => void }) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#FAFAF9] px-4 py-8">
-      <div className="w-full max-w-md p-6 sm:p-8 space-y-8 bg-white rounded-2xl shadow-lg border border-[#E8E4E0]">
+    <div className="flex items-center justify-center min-h-screen bg-[#F3F2F1] px-4 py-8">
+      <div className="w-full max-w-md p-6 sm:p-8 space-y-8 bg-white rounded-2xl shadow-lg border border-gray-200">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-[#1A1A1A]">Панель управления</h2>
-          <p className="mt-2 text-sm text-[#1A1A1A]/70">Введите пароль администратора</p>
+          <h2 className="text-3xl font-bold text-[#1A1A1A]">Летто · Админка</h2>
+          <p className="mt-2 text-sm text-gray-600">Введите пароль администратора</p>
         </div>
 
         {error && (
@@ -63,7 +63,7 @@ export function LoginForm({ onLogin }: { onLogin: () => void }) {
                 name="password"
                 type="password"
                 required
-                className="pl-10 rounded-xl border-[#E8E4E0]"
+                className="pl-10 rounded-xl border-gray-300"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -73,8 +73,7 @@ export function LoginForm({ onLogin }: { onLogin: () => void }) {
           <Button
             type="submit"
             disabled={submitting}
-            variant="brand"
-            className="w-full rounded-xl"
+            className="w-full rounded-xl bg-[#2D2D2D] text-white hover:bg-[#3D3D3D] hover:text-white"
           >
             {submitting ? 'Вход...' : 'Войти'}
           </Button>

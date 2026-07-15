@@ -55,6 +55,7 @@ export function AdminLayout({
     <>
       {TABS.map((tab) => {
         const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
         return (
           <button
             key={tab.id}
@@ -65,7 +66,9 @@ export function AdminLayout({
             }}
             className={cn(
               'flex items-center w-full p-3 rounded-xl text-left transition-colors',
-              activeTab === tab.id ? 'bg-gray-700' : 'hover:bg-gray-700'
+              isActive
+                ? 'bg-[#3D3D3D] text-white'
+                : 'text-gray-300 hover:bg-[#3D3D3D] hover:text-white'
             )}
           >
             <Icon className="w-5 h-5 mr-3 shrink-0" />
@@ -79,7 +82,7 @@ export function AdminLayout({
           setMenuOpen(false);
           handleLogout();
         }}
-        className="flex items-center w-full p-3 rounded-xl hover:bg-gray-700 mt-4 border-t border-gray-700 pt-4"
+        className="flex items-center w-full p-3 rounded-xl text-gray-300 hover:bg-[#3D3D3D] hover:text-white mt-4 border-t border-[#3D3D3D] pt-4"
       >
         <LogOut className="w-5 h-5 mr-3 shrink-0" />
         <span className="text-sm">Выйти</span>
@@ -88,33 +91,35 @@ export function AdminLayout({
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row">
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:w-64 lg:shrink-0 bg-gray-800 text-white flex-col">
-        <div className="p-4 border-b border-gray-700">
-          <h1 className="text-xl font-bold">Панель управления</h1>
+    <div className="min-h-screen bg-[#F3F2F1] flex flex-col lg:flex-row">
+      <aside className="hidden lg:flex lg:w-64 lg:shrink-0 bg-[#2D2D2D] text-white flex-col">
+        <div className="p-4 border-b border-[#3D3D3D]">
+          <h1 className="text-xl font-bold tracking-tight">Летто · Админка</h1>
+          <p className="text-xs text-gray-400 mt-1">Панель управления</p>
         </div>
         <nav className="p-4 space-y-2 flex-1">
           <NavButtons />
         </nav>
       </aside>
 
-      {/* Mobile header */}
-      <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 bg-gray-800 text-white px-4 py-3 border-b border-gray-700">
+      <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 bg-[#2D2D2D] text-white px-4 py-3 border-b border-[#3D3D3D]">
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-gray-700 shrink-0"
+              className="text-white hover:bg-[#3D3D3D] hover:text-white shrink-0"
               aria-label="Открыть меню"
             >
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[min(100vw-2rem,18rem)] bg-gray-800 text-white border-gray-700 p-0">
-            <SheetHeader className="p-4 border-b border-gray-700 text-left">
-              <SheetTitle className="text-white text-lg">Панель управления</SheetTitle>
+          <SheetContent
+            side="left"
+            className="w-[min(100vw-2rem,18rem)] bg-[#2D2D2D] text-white border-[#3D3D3D] p-0 [&>button]:text-white [&>button]:hover:text-white [&>button]:opacity-90"
+          >
+            <SheetHeader className="p-4 border-b border-[#3D3D3D] text-left">
+              <SheetTitle className="text-white text-lg">Летто · Админка</SheetTitle>
             </SheetHeader>
             <nav className="p-4 space-y-2">
               <NavButtons onNavigate={() => setMenuOpen(false)} />
@@ -127,7 +132,7 @@ export function AdminLayout({
         <Button
           variant="ghost"
           size="icon"
-          className="text-white hover:bg-gray-700 shrink-0"
+          className="text-white hover:bg-[#3D3D3D] hover:text-white shrink-0"
           onClick={handleLogout}
           aria-label="Выйти"
         >
@@ -135,7 +140,6 @@ export function AdminLayout({
         </Button>
       </header>
 
-      {/* Mobile bottom nav */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)]">
         <div className="grid grid-cols-3">
           {TABS.map((tab) => {
@@ -148,7 +152,7 @@ export function AdminLayout({
                 onClick={() => selectTab(tab.id)}
                 className={cn(
                   'flex flex-col items-center justify-center gap-1 py-2.5 px-1 text-[10px] sm:text-xs transition-colors',
-                  isActive ? 'text-[#5E4037] bg-[#F9F5F0]' : 'text-gray-500'
+                  isActive ? 'text-[#1A1A1A] bg-gray-100 font-medium' : 'text-gray-500'
                 )}
               >
                 <Icon className="h-5 w-5" />

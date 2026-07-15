@@ -208,8 +208,8 @@ export function Inquiries() {
                   <span
                     className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold shrink-0 ${
                       entry.kind === 'order'
-                        ? 'bg-[#F3EBE6] text-[#5E4037]'
-                        : 'bg-blue-100 text-blue-800'
+                        ? 'bg-gray-200 text-gray-800'
+                        : 'bg-slate-100 text-slate-700'
                     }`}
                   >
                     {entry.kind === 'order' ? (
@@ -252,9 +252,13 @@ export function Inquiries() {
                     Просмотр
                   </Button>
                   <Button
-                    variant={isProcessed(entry) ? 'outline' : 'brand'}
+                    variant={isProcessed(entry) ? 'outline' : 'default'}
                     size="sm"
-                    className="flex-1"
+                    className={
+                      isProcessed(entry)
+                        ? 'flex-1'
+                        : 'flex-1 bg-[#2D2D2D] text-white hover:bg-[#3D3D3D] hover:text-white'
+                    }
                     onClick={() => handleStatusChange(entry)}
                   >
                     {isProcessed(entry) ? (
@@ -306,8 +310,8 @@ export function Inquiries() {
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
                         entry.kind === 'order'
-                          ? 'bg-[#F3EBE6] text-[#5E4037]'
-                          : 'bg-blue-100 text-blue-800'
+                          ? 'bg-gray-200 text-gray-800'
+                          : 'bg-slate-100 text-slate-700'
                       }`}
                     >
                       {entry.kind === 'order' ? (
@@ -349,8 +353,13 @@ export function Inquiries() {
                       Просмотр
                     </Button>
                     <Button
-                      variant={isProcessed(entry) ? 'outline' : 'brand'}
+                      variant={isProcessed(entry) ? 'outline' : 'default'}
                       size="sm"
+                      className={
+                        isProcessed(entry)
+                          ? undefined
+                          : 'bg-[#2D2D2D] text-white hover:bg-[#3D3D3D] hover:text-white'
+                      }
                       onClick={() => handleStatusChange(entry)}
                     >
                       {isProcessed(entry) ? (
@@ -399,12 +408,16 @@ export function Inquiries() {
                 Закрыть
               </Button>
               <Button
-                className="w-full sm:w-auto"
+                className={
+                  isProcessed(selectedEntry)
+                    ? 'w-full sm:w-auto'
+                    : 'w-full sm:w-auto bg-[#2D2D2D] text-white hover:bg-[#3D3D3D] hover:text-white'
+                }
                 onClick={() => {
                   handleStatusChange(selectedEntry);
                   setSelectedEntry(null);
                 }}
-                variant={isProcessed(selectedEntry) ? 'outline' : 'brand'}
+                variant={isProcessed(selectedEntry) ? 'outline' : 'default'}
               >
                 {isProcessed(selectedEntry) ? (
                   <>

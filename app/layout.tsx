@@ -1,9 +1,7 @@
-import { Footer } from '@/components/Footer';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Header } from '@/components/Header';
-import { CartProvider } from '@/contexts/CartContext';
+import { SiteShell } from '@/components/SiteShell';
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
@@ -36,11 +34,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body className={inter.className}>
-        <CartProvider>
-          <Header />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
-        </CartProvider>
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );

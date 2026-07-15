@@ -108,8 +108,7 @@ export function Products({
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <h1 className="text-xl md:text-2xl font-bold">Управление товарами</h1>
         <Button
-          variant="brand"
-          className="w-full sm:w-auto shrink-0"
+          className="w-full sm:w-auto shrink-0 bg-[#2D2D2D] text-white hover:bg-[#3D3D3D] hover:text-white"
           onClick={() => {
             setEditingProduct(null);
             setShowForm(true);

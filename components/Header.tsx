@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Phone, Menu } from 'lucide-react';
@@ -11,15 +12,28 @@ import {
 } from '@/components/ui/sheet';
 import { useCart } from '@/contexts/CartContext';
 import { ORDER_PHONES } from '@/lib/store-locations';
+import { cn } from '@/lib/utils';
 
 export function Header() {
-  const { state } = useCart();
+  const { state, addPulse } = useCart();
+  const [pulse, setPulse] = useState(false);
   const navigation = [
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' },
     { name: 'Отзывы', href: '/reviews' },
     { name: 'Контакты', href: '/contacts' },
   ];
+
+  useEffect(() => {
+    if (addPulse === 0) return;
+    setPulse(false);
+    const frame = requestAnimationFrame(() => setPulse(true));
+    const timer = window.setTimeout(() => setPulse(false), 340);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [addPulse]);
 
   return (
     <header className="bg-[#2D2D2D] text-white sticky top-0 z-50">
@@ -36,7 +50,6 @@ export function Header() {
             />
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => (
               <Link
@@ -49,9 +62,7 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Right Section */}
           <div className="flex items-center space-x-6">
-            {/* Phone */}
             <div className="hidden md:flex flex-col items-end gap-0.5 text-sm">
               {ORDER_PHONES.map((phone) => (
                 <a
@@ -65,17 +76,23 @@ export function Header() {
               ))}
             </div>
 
-            {/* Cart */}
-            <Link href="/cart" className="relative">
-              <ShoppingCart className="h-6 w-6 text-white" />
+            <Link href="/cart" className="relative" aria-label="Корзина">
+              <ShoppingCart
+                className={cn('h-6 w-6 text-white', pulse && 'cart-icon-pulse')}
+              />
               {state.itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#5E4037] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center antialiased">
+                <span
+                  key={`${state.itemCount}-${addPulse}`}
+                  className={cn(
+                    'absolute -top-2 -right-2 bg-[#5E4037] text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center antialiased',
+                    pulse && 'cart-badge-pulse'
+                  )}
+                >
                   {state.itemCount}
                 </span>
               )}
             </Link>
 
-            {/* Mobile Menu */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-[#3D3D3D]">

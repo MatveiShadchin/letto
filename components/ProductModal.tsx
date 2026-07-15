@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ShoppingCart, X } from 'lucide-react';
-import { Button } from './ui/button';
-import { useCart } from '@/contexts/CartContext';
+import { X } from 'lucide-react';
+import { AddToCartButton } from './AddToCartButton';
 import { ProductImage } from './ProductImage';
-import { DEFAULT_CART_EXTRAS } from '@/lib/cart-extras';
 import { Product } from '@/types/product';
 
 export function ProductModal({
@@ -18,7 +16,6 @@ export function ProductModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { addToCart } = useCart();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -93,14 +90,12 @@ export function ProductModal({
                 )}
 
                 <div className="mt-auto pt-2">
-                  <Button
-                    onClick={() => addToCart(product, DEFAULT_CART_EXTRAS)}
-                    variant="brand"
+                  <AddToCartButton
+                    product={product}
+                    label="Добавить в корзину"
                     className="w-full h-12 rounded-xl font-semibold antialiased"
-                  >
-                    <ShoppingCart className="mr-2 w-5 h-5" />
-                    Добавить в корзину
-                  </Button>
+                    iconClassName="w-5 h-5 mr-2"
+                  />
                 </div>
               </div>
             </div>

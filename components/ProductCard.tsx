@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ShoppingCart } from 'lucide-react';
 import { Button } from './ui/button';
 import { ProductModal } from './ProductModal';
-import { useCart } from '@/contexts/CartContext';
+import { AddToCartButton } from './AddToCartButton';
 import { ProductImage } from './ProductImage';
-import { DEFAULT_CART_EXTRAS } from '@/lib/cart-extras';
 import { Product } from '@/types/product';
 
 export function ProductCard({
@@ -17,7 +15,6 @@ export function ProductCard({
   priority?: boolean;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { addToCart } = useCart();
 
   if (!product) return null;
 
@@ -46,14 +43,10 @@ export function ProductCard({
 
           <div className="mt-auto px-1">
             <div className="flex gap-2">
-              <Button
-                onClick={() => addToCart(product, DEFAULT_CART_EXTRAS)}
-                variant="brand"
+              <AddToCartButton
+                product={product}
                 className="flex-1 h-10 rounded-xl font-medium tracking-tight antialiased text-sm"
-              >
-                <ShoppingCart className="w-4 h-4 mr-1.5 shrink-0" />
-                В корзину
-              </Button>
+              />
 
               <Button
                 onClick={() => setIsModalOpen(true)}

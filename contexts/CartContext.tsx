@@ -6,6 +6,7 @@ import { CartAddons, CartItem, CartItemExtras, CartState, OrderPostcard, Product
 
 interface CartContextType {
   state: CartState;
+  addPulse: number;
   addToCart: (product: Product, extras?: CartItemExtras) => void;
   removeFromCart: (cartKey: string) => void;
   updateQuantity: (cartKey: string, quantity: number) => void;
@@ -125,9 +126,11 @@ const initialState: CartState = {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [addPulse, setAddPulse] = React.useState(0);
 
   const addToCart = (product: Product, extras: CartItemExtras = DEFAULT_CART_EXTRAS) => {
     dispatch({ type: 'ADD_TO_CART', payload: { product, extras } });
+    setAddPulse((n) => n + 1);
   };
 
   const removeFromCart = (cartKey: string) => {
@@ -152,7 +155,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ state, addToCart, removeFromCart, updateQuantity, updateItemAddons, setOrderPostcard, clearCart }}
+      value={{
+        state,
+        addPulse,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        updateItemAddons,
+        setOrderPostcard,
+        clearCart,
+      }}
     >
       {children}
     </CartContext.Provider>

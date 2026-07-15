@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { AddToCartButton } from '@/components/AddToCartButton';
 import { ProductImage } from '@/components/ProductImage';
 import { useCart } from '@/contexts/CartContext';
-import { DEFAULT_CART_EXTRAS } from '@/lib/cart-extras';
 import {
   getCartRecommendationTitle,
   getCartRecommendedProducts,
@@ -12,7 +11,7 @@ import {
 import { Product } from '@/types/product';
 
 export function CartRecommendations() {
-  const { state, addToCart } = useCart();
+  const { state } = useCart();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -64,15 +63,13 @@ export function CartRecommendations() {
               <p className="text-sm font-bold text-[#1A1A1A]">
                 {(item.price / 100).toFixed(0)} ₽
               </p>
-              <Button
-                type="button"
+              <AddToCartButton
+                product={item}
                 variant="outline"
                 size="sm"
                 className="mt-auto h-8 rounded-lg text-xs border-[#E8E4E0] hover:bg-white"
-                onClick={() => addToCart(item, DEFAULT_CART_EXTRAS)}
-              >
-                В корзину
-              </Button>
+                iconClassName="w-3.5 h-3.5 mr-1"
+              />
             </div>
           </div>
         ))}

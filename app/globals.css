@@ -45,3 +45,63 @@ body {
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* Добавление в корзину — быстро и без лишнего */
+@keyframes cart-badge-pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  55% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes cart-icon-nudge {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  40% {
+    transform: scale(1.12) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes add-to-cart-press {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-icon-pulse {
+  animation: cart-icon-nudge 320ms ease-out;
+}
+
+.cart-badge-pulse {
+  animation: cart-badge-pop 320ms ease-out;
+}
+
+.add-to-cart-btn--added {
+  animation: add-to-cart-press 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-icon-pulse,
+  .cart-badge-pulse,
+  .add-to-cart-btn--added {
+    animation: none;
+  }
+}

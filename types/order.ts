@@ -26,6 +26,7 @@ export interface Order {
   house?: string | null;
   pickup_store?: string | null;
   delivery_method: 'courier' | 'pickup';
+  delivery_date?: string | null;
   delivery_time?: string | null;
   items: OrderLineItem[];
   items_total: number;

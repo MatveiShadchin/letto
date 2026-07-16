@@ -26,19 +26,66 @@ export interface FloristHoursInfo {
   pickupHoursLabel: string;
 }
 
-function getStoreTimeParts(date = new Date()): { hour: number; minute: number; totalMinutes: number } {
-  const formatter = new Intl.DateTimeFormat('ru-RU', {
+export const DELIVERY_DATE_HORIZON_DAYS = 7;
+
+function getStoreTimeParts(date = new Date()): {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  totalMinutes: number;
+  dateKey: string;
+} {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: STORE_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     hour: 'numeric',
     minute: 'numeric',
     hour12: false,
   });
 
   const parts = formatter.formatToParts(date);
+  const year = Number(parts.find((part) => part.type === 'year')?.value ?? 0);
+  const month = Number(parts.find((part) => part.type === 'month')?.value ?? 0);
+  const day = Number(parts.find((part) => part.type === 'day')?.value ?? 0);
   const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0);
   const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
+  const dateKey = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-  return { hour, minute, totalMinutes: hour * 60 + minute };
+  return { year, month, day, hour, minute, totalMinutes: hour * 60 + minute, dateKey };
+}
+
+/** Календарная дата магазина в формате YYYY-MM-DD. */
+export function getStoreDateKey(date = new Date()): string {
+  return getStoreTimeParts(date).dateKey;
+}
+
+export function addDaysToDateKey(dateKey: string, days: number): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const utc = new Date(Date.UTC(year, month - 1, day + days));
+  return utc.toISOString().slice(0, 10);
+}
+
+/** Дата для отображения: 16.07.2026 */
+export function formatDeliveryDateRu(dateKey: string | null | undefined): string {
+  if (!dateKey) return '—';
+  const match = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return dateKey;
+  return `${match[3]}.${match[2]}.${match[1]}`;
+}
+
+function isValidDateKey(dateKey: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  return (
+    utc.getUTCFullYear() === year &&
+    utc.getUTCMonth() === month - 1 &&
+    utc.getUTCDate() === day
+  );
 }
 
 function parseSlotStartMinutes(slot: string): number {
@@ -174,25 +221,61 @@ export function getFloristHoursInfo(
   };
 }
 
-export function getAvailableDeliverySlots(now = new Date()): Array<{
+/** Есть ли ещё доступные интервалы на указанную дату. */
+export function hasAvailableDeliverySlotsForDate(
+  dateKey: string,
+  now = new Date()
+): boolean {
+  return getAvailableDeliverySlots(dateKey, now).length > 0;
+}
+
+/** Ближайшая дата, на которую ещё можно выбрать доставку. */
+export function getEarliestDeliveryDateKey(now = new Date()): string {
+  const todayKey = getStoreDateKey(now);
+  for (let offset = 0; offset <= DELIVERY_DATE_HORIZON_DAYS; offset += 1) {
+    const dateKey = addDaysToDateKey(todayKey, offset);
+    if (hasAvailableDeliverySlotsForDate(dateKey, now)) {
+      return dateKey;
+    }
+  }
+  return addDaysToDateKey(todayKey, 1);
+}
+
+export function getLatestDeliveryDateKey(now = new Date()): string {
+  return addDaysToDateKey(getStoreDateKey(now), DELIVERY_DATE_HORIZON_DAYS);
+}
+
+/**
+ * Доступные интервалы на выбранную дату.
+ * Без подписей «сегодня»/«завтра» — дату выбирают отдельно.
+ */
+export function getAvailableDeliverySlots(
+  dateKey?: string,
+  now = new Date()
+): Array<{
   value: string;
   label: string;
 }> {
+  const selectedDate = dateKey && isValidDateKey(dateKey) ? dateKey : getEarliestDeliveryDateKey(now);
+  const { dateKey: todayKey, totalMinutes } = getStoreTimeParts(now);
   const processing = getFloristProcessingStatus(now);
-  const { totalMinutes } = getStoreTimeParts(now);
 
-  return DELIVERY_TIME_SLOTS.map((slot) => {
+  if (selectedDate < todayKey) {
+    return [];
+  }
+
+  if (selectedDate === todayKey) {
     if (!processing.canProcessToday) {
-      return { value: slot, label: `${slot} (завтра)` };
+      return [];
     }
 
-    const slotStart = parseSlotStartMinutes(slot);
-    if (slotStart <= totalMinutes) {
-      return { value: slot, label: `${slot} (завтра)` };
-    }
+    return DELIVERY_TIME_SLOTS.filter((slot) => parseSlotStartMinutes(slot) > totalMinutes).map(
+      (slot) => ({ value: slot, label: slot })
+    );
+  }
 
-    return { value: slot, label: `${slot} (сегодня)` };
-  });
+  // Будущие дни — все интервалы
+  return DELIVERY_TIME_SLOTS.map((slot) => ({ value: slot, label: slot }));
 }
 
 export function formatFloristProcessingNote(

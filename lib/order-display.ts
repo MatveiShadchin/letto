@@ -1,4 +1,5 @@
 import { formatOrderMessengerContact } from '@/lib/messenger-contact';
+import { formatDeliveryDateRu } from '@/lib/florist-hours';
 import { PICKUP_STORES } from '@/lib/store-locations';
 import { formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
 import { Order, OrderLineItem } from '@/types/order';
@@ -61,6 +62,7 @@ export function formatOrderDetails(order: Order): string {
       [order.street, order.house].filter(Boolean).join(', ') ||
       '—';
     lines.push(`Адрес: ${address}`);
+    lines.push(`Дата: ${formatDeliveryDateRu(order.delivery_date)}`);
     lines.push(`Время: ${order.delivery_time || '—'}`);
   }
 

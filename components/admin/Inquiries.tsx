@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Mail, ShoppingBag, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiJson } from '@/lib/api-client';
+import { formatDeliveryDateRu } from '@/lib/florist-hours';
 import {
   formatOrderDetails,
   formatOrderItemExtras,
@@ -504,6 +505,7 @@ function OrderDetails({
           <DetailField label="Имя получателя" value={order.recipient_name || '—'} />
           <DetailField label="Телефон получателя" value={order.recipient_phone || '—'} />
           <DetailField label="Адрес доставки" value={recipientAddress || '—'} />
+          <DetailField label="Дата доставки" value={formatDeliveryDateRu(order.delivery_date)} />
           <DetailField label="Время доставки" value={order.delivery_time || '—'} />
         </>
       )}

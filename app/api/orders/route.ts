@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
           street,
           house: body.delivery_method === 'courier' ? body.house ?? null : null,
           delivery_method: body.delivery_method,
+          delivery_date: body.delivery_date ?? null,
           delivery_time: body.delivery_time ?? null,
           items: body.items ?? [],
           items_total: body.items_total ?? 0,
@@ -77,10 +78,10 @@ export async function POST(request: NextRequest) {
     const { rows } = await query<Order>(
       `INSERT INTO orders (
         customer_name, phone, recipient_name, recipient_phone, recipient_address, special_wishes,
-        street, house, pickup_store, delivery_method, delivery_time,
+        street, house, pickup_store, delivery_method, delivery_date, delivery_time,
         preferred_notify_channel, messenger_contact, telegram_chat_id, vk_user_id, whatsapp_phone, max_chat_id,
         items, items_total, delivery_cost, total, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::jsonb, $19, $20, $21, 'new')
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb, $20, $21, $22, 'new')
       RETURNING *`,
       [
         body.customer_name,
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
         null,
         body.pickup_store ?? null,
         body.delivery_method,
+        body.delivery_date ?? null,
         body.delivery_time ?? null,
         messenger.preferred_notify_channel ?? null,
         messenger.messenger_contact ?? null,

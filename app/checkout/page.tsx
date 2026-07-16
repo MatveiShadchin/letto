@@ -17,7 +17,12 @@ import {
   FREE_DELIVERY_THRESHOLD_RUBLES,
 } from '@/lib/delivery';
 import { validateMessengerContactInput } from '@/lib/messenger-contact';
-import { formatFloristProcessingNote, getAvailableDeliverySlots } from '@/lib/florist-hours';
+import {
+  formatFloristProcessingNote,
+  getAvailableDeliverySlots,
+  getEarliestDeliveryDateKey,
+  getLatestDeliveryDateKey,
+} from '@/lib/florist-hours';
 import { PICKUP_STORES, PickupStoreId } from '@/lib/store-locations';
 import { cn } from '@/lib/utils';
 import { OrderPostcard } from '@/types/product';
@@ -32,6 +37,7 @@ export default function CheckoutPage() {
     recipientName: '',
     recipientPhone: '',
     recipientAddress: '',
+    deliveryDate: getEarliestDeliveryDateKey(),
     deliveryTime: '',
     specialWishes: '',
   });
@@ -43,7 +49,11 @@ export default function CheckoutPage() {
   const [placedMessengerChannel, setPlacedMessengerChannel] =
     useState<MessengerContactFormValue['channel']>('phone');
   const [placedDeliveryMethod, setPlacedDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
-  const [deliverySlots, setDeliverySlots] = useState(() => getAvailableDeliverySlots());
+  const [minDeliveryDate, setMinDeliveryDate] = useState(() => getEarliestDeliveryDateKey());
+  const [maxDeliveryDate, setMaxDeliveryDate] = useState(() => getLatestDeliveryDateKey());
+  const [deliverySlots, setDeliverySlots] = useState(() =>
+    getAvailableDeliverySlots(getEarliestDeliveryDateKey())
+  );
   const [messengerContact, setMessengerContact] = useState<MessengerContactFormValue>({
     channel: 'phone',
     contact: '',
@@ -53,10 +63,33 @@ export default function CheckoutPage() {
   const timeSlots = useMemo(() => deliverySlots.map((slot) => slot.value), [deliverySlots]);
 
   useEffect(() => {
-    setDeliverySlots(getAvailableDeliverySlots());
-    const timer = window.setInterval(() => setDeliverySlots(getAvailableDeliverySlots()), 60_000);
+    const refreshWindow = () => {
+      const earliest = getEarliestDeliveryDateKey();
+      const latest = getLatestDeliveryDateKey();
+      setMinDeliveryDate(earliest);
+      setMaxDeliveryDate(latest);
+      setFormData((prev) => {
+        const nextDate =
+          !prev.deliveryDate || prev.deliveryDate < earliest || prev.deliveryDate > latest
+            ? earliest
+            : prev.deliveryDate;
+        return nextDate === prev.deliveryDate ? prev : { ...prev, deliveryDate: nextDate };
+      });
+    };
+
+    refreshWindow();
+    const timer = window.setInterval(refreshWindow, 60_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const refreshSlots = () => {
+      setDeliverySlots(getAvailableDeliverySlots(formData.deliveryDate));
+    };
+    refreshSlots();
+    const timer = window.setInterval(refreshSlots, 60_000);
+    return () => window.clearInterval(timer);
+  }, [formData.deliveryDate]);
 
   useEffect(() => {
     if (formData.deliveryTime && !timeSlots.includes(formData.deliveryTime)) {
@@ -102,6 +135,7 @@ export default function CheckoutPage() {
           special_wishes: formData.specialWishes.trim() || null,
           pickup_store: deliveryMethod === 'pickup' ? pickupStoreId : null,
           delivery_method: deliveryMethod,
+          delivery_date: deliveryMethod === 'courier' ? formData.deliveryDate : null,
           delivery_time: deliveryMethod === 'courier' ? formData.deliveryTime : null,
           items: state.items.map((item) => ({
             id: item.id,
@@ -166,6 +200,10 @@ export default function CheckoutPage() {
       }
       if (!formData.recipientAddress.trim()) {
         setError('Укажите адрес доставки');
+        return;
+      }
+      if (!formData.deliveryDate) {
+        setError('Выберите дату доставки');
         return;
       }
       if (!formData.deliveryTime) {
@@ -447,29 +485,55 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="rounded-2xl border border-[#E8E4E0] bg-white p-6 shadow-sm">
-                  <h2 className="text-xl font-semibold text-[#1A1A1A] mb-4">Время доставки</h2>
-                  <div>
-                    <label
-                      htmlFor="deliveryTime"
-                      className="block text-sm font-medium text-[#1A1A1A] mb-2"
-                    >
-                      Интервал *
-                    </label>
-                    <select
-                      id="deliveryTime"
-                      name="deliveryTime"
-                      value={formData.deliveryTime}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full rounded-xl border border-[#E8E4E0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5E4037]"
-                    >
-                      <option value="">Выберите время</option>
-                      {deliverySlots.map((slot) => (
-                        <option key={slot.value} value={slot.value}>
-                          {slot.label}
-                        </option>
-                      ))}
-                    </select>
+                  <h2 className="text-xl font-semibold text-[#1A1A1A] mb-4">Дата и время доставки</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label
+                        htmlFor="deliveryDate"
+                        className="block text-sm font-medium text-[#1A1A1A] mb-2"
+                      >
+                        Дата доставки *
+                      </label>
+                      <input
+                        type="date"
+                        id="deliveryDate"
+                        name="deliveryDate"
+                        value={formData.deliveryDate}
+                        min={minDeliveryDate}
+                        max={maxDeliveryDate}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full rounded-xl border border-[#E8E4E0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5E4037]"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="deliveryTime"
+                        className="block text-sm font-medium text-[#1A1A1A] mb-2"
+                      >
+                        Интервал *
+                      </label>
+                      <select
+                        id="deliveryTime"
+                        name="deliveryTime"
+                        value={formData.deliveryTime}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full rounded-xl border border-[#E8E4E0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5E4037]"
+                      >
+                        <option value="">Выберите время</option>
+                        {deliverySlots.map((slot) => (
+                          <option key={slot.value} value={slot.value}>
+                            {slot.label}
+                          </option>
+                        ))}
+                      </select>
+                      {deliverySlots.length === 0 && (
+                        <p className="mt-2 text-sm text-[#8A6A5A]">
+                          На эту дату свободных интервалов нет — выберите другую дату.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </>

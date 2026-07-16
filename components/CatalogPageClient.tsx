@@ -3,13 +3,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Search, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import { ProductsGrid } from '@/components/ProductsGrid';
-import { categories, priceRanges } from '@/data/products';
+import { productCategories, priceRanges } from '@/data/products';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Product } from '@/types/product';
 import { cn } from '@/lib/utils';
 import { sortByPopularity } from '@/lib/product-popularity';
+import { categoryMatchesFilter, normalizeCatalogCategory } from '@/lib/product-recommendations';
 
 const SORT_OPTIONS = [
   { value: 'popular', label: 'Популярное' },
@@ -26,7 +27,7 @@ export function CatalogPageClient({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    initialCategory ? [initialCategory] : []
+    initialCategory ? [normalizeCatalogCategory(initialCategory)] : []
   );
   const [selectedPriceRange, setSelectedPriceRange] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
@@ -74,7 +75,9 @@ export function CatalogPageClient({
     }
 
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter((product) => selectedCategories.includes(product.category));
+      filtered = filtered.filter((product) =>
+        selectedCategories.some((selected) => categoryMatchesFilter(product.category, selected))
+      );
     }
 
     if (selectedPriceRange !== 'all') {
@@ -124,7 +127,7 @@ export function CatalogPageClient({
   };
 
   const getCategoryCount = (category: string) =>
-    products.filter((product) => product.category === category).length;
+    products.filter((product) => categoryMatchesFilter(product.category, category)).length;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -237,7 +240,7 @@ export function CatalogPageClient({
               <div className="space-y-3">
                 <p className="text-sm font-medium text-[#1A1A1A]/70">Категории</p>
                 <div className="flex flex-wrap gap-2">
-                  {categories.slice(1).map((category) => {
+                  {productCategories.map((category) => {
                     const active = selectedCategories.includes(category.value);
                     return (
                       <button

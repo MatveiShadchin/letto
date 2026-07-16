@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ProductForm } from './ProductForm';
 import { apiJson } from '@/lib/api-client';
 import { getErrorMessage } from '@/lib/supabase';
+import { getCategoryLabel } from '@/lib/product-recommendations';
 import { Product } from '@/types/product';
 
 export function Products({
@@ -154,7 +155,7 @@ export function Products({
                 <div>
                   <p className="font-medium text-gray-900">{product.name}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {product.category} · {(product.price / 100).toFixed(0)} ₽ · на складе:{' '}
+                    {getCategoryLabel(product.category)} · {(product.price / 100).toFixed(0)} ₽ · на складе:{' '}
                     {product.stock}
                   </p>
                 </div>
@@ -199,7 +200,9 @@ export function Products({
               {products.map((product) => (
                 <tr key={product.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.category}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {getCategoryLabel(product.category)}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {(product.price / 100).toFixed(0)} ₽
                   </td>

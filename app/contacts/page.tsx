@@ -12,85 +12,52 @@ export default function ContactsPage() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        {PICKUP_STORES.map((store) => (
-          <Card key={store.id} className="overflow-hidden rounded-2xl border-[#E8E4E0]">
-            <div className="bg-[#5E4037] px-6 py-5 text-white">
-              <h2 className="text-xl font-bold">{store.title}</h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#5E4037]" />
-                <div>
-                  <p className="font-medium text-[#1A1A1A]">Адрес</p>
-                  <p className="text-[#1A1A1A]/80">{store.address}</p>
+        {PICKUP_STORES.map((store) => {
+          const phone = ORDER_PHONES.find((item) => item.storeId === store.id);
+
+          return (
+            <Card key={store.id} className="overflow-hidden rounded-2xl border-[#E8E4E0]">
+              <div className="bg-[#5E4037] px-6 py-5 text-white">
+                <h2 className="text-xl font-bold">{store.title}</h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#5E4037]" />
+                  <div>
+                    <p className="font-medium text-[#1A1A1A]">Адрес</p>
+                    <p className="text-[#1A1A1A]/80">{store.address}</p>
+                    {phone ? (
+                      <a
+                        href={phone.href}
+                        className="mt-1 inline-flex items-center gap-1.5 text-[#1A1A1A]/80 hover:text-[#5E4037] transition-colors"
+                      >
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        {phone.label}
+                      </a>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#5E4037]" />
+                  <div>
+                    <p className="font-medium text-[#1A1A1A]">Самовывоз</p>
+                    <p className="text-[#1A1A1A]/80">Круглосуточно</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#5E4037]" />
+                  <div>
+                    <p className="font-medium text-[#1A1A1A]">Сбор заказов флористами</p>
+                    <p className="text-[#1A1A1A]/80">Ежедневно с 8:00 до 20:00</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#5E4037]" />
-                <div>
-                  <p className="font-medium text-[#1A1A1A]">Самовывоз</p>
-                  <p className="text-[#1A1A1A]/80">Круглосуточно</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#5E4037]" />
-                <div>
-                  <p className="font-medium text-[#1A1A1A]">Сбор заказов флористами</p>
-                  <p className="text-[#1A1A1A]/80">Ежедневно с 8:00 до 20:00</p>
-                  <p className="text-xs text-[#1A1A1A]/55 mt-1">
-                    После 19:45 срочные заказы переносятся на утро. Вне этого времени заказы ждут
-                    до 8:00 следующего дня.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
 
       <div className="mb-12">
-        <h2 className="text-xl font-bold text-[#1A1A1A] mb-2">Телефоны для заказа</h2>
-        <p className="text-[#1A1A1A]/70 mb-6 text-sm sm:text-base">
-          Нажмите на карточку — откроется набор номера
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          {ORDER_PHONES.map((phone) => {
-            const store = PICKUP_STORES.find((item) => item.id === phone.storeId);
-
-            return (
-              <a
-                key={phone.href}
-                href={phone.href}
-                className="group block h-full"
-              >
-                <Card className="h-full rounded-2xl border-[#E8E4E0] p-5 transition-all hover:border-[#5E4037]/40 hover:shadow-md active:scale-[0.99]">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5E4037] text-white">
-                      <Phone className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      {store && (
-                        <p className="text-sm font-medium text-[#5E4037]">{store.title}</p>
-                      )}
-                      <p className="mt-1 text-lg sm:text-xl font-bold text-[#1A1A1A] tracking-tight">
-                        {phone.label}
-                      </p>
-                      {store && (
-                        <p className="mt-1 text-sm text-[#1A1A1A]/65">{store.address}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-[#5E4037]">
-                    Позвонить
-                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                  </div>
-                </Card>
-              </a>
-            );
-          })}
-        </div>
-
         <a
           href={VK_URL}
           target="_blank"

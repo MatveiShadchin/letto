@@ -5,6 +5,9 @@ export const ORDER_PHONES = [
   { href: 'tel:+79123052260', label: '+7 (912) 305-22-60', storeId: 'oktyabr' },
 ] as const;
 
+/** Телефон в шапке сайта — точка на пр. Октября */
+export const HEADER_PHONE = ORDER_PHONES.find((phone) => phone.storeId === 'oktyabr')!;
+
 export const VK_URL = getVkCommunityUrl();
 export const VK_LABEL = getVkCommunityShortLabel();
 

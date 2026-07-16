@@ -19,6 +19,11 @@ sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='letto'" | gr
   || sudo -u postgres psql -c "CREATE DATABASE letto OWNER letto;"
 
 sudo -u postgres psql -d letto -f database/schema.sql
+# Дополнительные колонки/таблицы поверх базовой схемы
+for migration in database/migrations/*.sql; do
+  echo "==> Миграция $migration"
+  sudo -u postgres psql -d letto -f "$migration" || true
+done
 bash deploy/fix-postgres-permissions.sh
 
 DATABASE_URL="postgresql://letto:${DB_PASS}@127.0.0.1:5432/letto"

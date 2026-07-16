@@ -10,6 +10,7 @@ import { requireAdmin } from '@/lib/require-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { PICKUP_STORES } from '@/lib/store-locations';
 import { Order } from '@/types/order';
+import { validateOrderAgainstSoftLimits } from '@/lib/limits';
 
 function resolvePickupAddress(pickupStoreId: string | null | undefined): string | null {
   if (!pickupStoreId) return null;
@@ -19,6 +20,17 @@ function resolvePickupAddress(pickupStoreId: string | null | undefined): string 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Soft-limit guardrails (cannot be bypassed UI/manual/script)
+    const validation = validateOrderAgainstSoftLimits({
+      items: Array.isArray(body.items) ? body.items : [],
+      items_total: body.items_total ?? 0,
+      delivery_cost: body.delivery_cost ?? 0,
+      total: body.total ?? 0,
+    });
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.reason }, { status: 400 });
+    }
 
     const recipientAddress =
       body.recipient_address?.trim() ||

@@ -20,7 +20,8 @@ export const OurAdvantages = () => {
     {
       icon: <ShieldCheck className="w-8 h-8 text-[#5E4037]" strokeWidth={1.2} />,
       title: 'Два магазина в городе',
-      description: 'Самовывоз с пр. Макеева или пр. Октября — без ожидания курьера',
+      description:
+        'Самовывоз круглосуточно: пр. Макеева, 65/3 и пр. Октября, 38А',
     },
   ];
 

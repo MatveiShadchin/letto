@@ -5,6 +5,7 @@ export interface OrderLineItem {
   name: string;
   quantity: number;
   price: number;
+  image_url?: string;
   postcardWanted?: boolean;
   postcardText?: string;
   addons?: {

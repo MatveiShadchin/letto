@@ -142,6 +142,7 @@ export default function CheckoutPage() {
             name: item.name,
             quantity: item.quantity,
             price: item.price,
+            image_url: item.image_url,
             postcardWanted: orderPostcard?.wanted ?? false,
             postcardText: orderPostcard?.wanted ? orderPostcard.text : '',
             addons: item.addons,

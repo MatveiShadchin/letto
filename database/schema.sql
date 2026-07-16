@@ -70,6 +70,7 @@ create table orders (
   house text,
   pickup_store text,
   delivery_method text not null default 'courier' check (delivery_method in ('courier', 'pickup')),
+  delivery_date date,
   delivery_time text,
   items jsonb not null default '[]'::jsonb,
   items_total integer not null default 0,

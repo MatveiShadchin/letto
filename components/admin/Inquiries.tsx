@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Mail, ShoppingBag, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ProductImage } from '@/components/ProductImage';
 import { apiJson } from '@/lib/api-client';
+import { formatDeliveryDateRu } from '@/lib/florist-hours';
 import {
   formatOrderDetails,
   formatOrderItemExtras,
@@ -15,6 +17,7 @@ import {
 import { formatOrderMessengerContact } from '@/lib/messenger-contact';
 import { Inquiry } from '@/types/inquiry';
 import { Order } from '@/types/order';
+import { Product } from '@/types/product';
 
 type Entry =
   | { kind: 'inquiry'; data: Inquiry }
@@ -463,8 +466,45 @@ function OrderDetails({
   formatDate: (value?: string) => string;
 }) {
   const items = normalizeOrderItems(order.items);
+  const [productImages, setProductImages] = useState<Record<string, string>>({});
   const recipientAddress =
     order.recipient_address || [order.street, order.house].filter(Boolean).join(', ');
+
+  useEffect(() => {
+    const orderItems = normalizeOrderItems(order.items);
+    const missingIds = Array.from(
+      new Set(
+        orderItems
+          .filter((item) => !item.image_url?.trim() && item.id)
+          .map((item) => item.id)
+      )
+    );
+    if (missingIds.length === 0) {
+      setProductImages({});
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiJson<{ products: Product[] }>('/api/products');
+        if (cancelled) return;
+        const map: Record<string, string> = {};
+        for (const product of data.products ?? []) {
+          if (missingIds.includes(product.id) && product.image_url) {
+            map[product.id] = product.image_url;
+          }
+        }
+        setProductImages(map);
+      } catch {
+        /* ignore — show without photo */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [order.id, order.items]);
 
   const handleCopy = async () => {
     try {
@@ -504,6 +544,7 @@ function OrderDetails({
           <DetailField label="Имя получателя" value={order.recipient_name || '—'} />
           <DetailField label="Телефон получателя" value={order.recipient_phone || '—'} />
           <DetailField label="Адрес доставки" value={recipientAddress || '—'} />
+          <DetailField label="Дата доставки" value={formatDeliveryDateRu(order.delivery_date)} />
           <DetailField label="Время доставки" value={order.delivery_time || '—'} />
         </>
       )}
@@ -520,21 +561,29 @@ function OrderDetails({
           ) : (
             items.map((item) => {
               const extras = formatOrderItemExtras(item);
+              const imageUrl = item.image_url?.trim() || productImages[item.id] || '';
               return (
                 <div key={`${item.id}-${item.name}`} className="p-3 text-sm space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span>
-                      {item.name} × {item.quantity}
-                    </span>
-                    <span className="font-medium">
-                      {formatRublesFromKopecks(item.price * item.quantity)}
-                    </span>
+                  <div className="flex items-start gap-3">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-[#F3F2F1]">
+                      <ProductImage src={imageUrl} alt={item.name} size={128} className="object-cover" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <span>
+                          {item.name} × {item.quantity}
+                        </span>
+                        <span className="font-medium shrink-0">
+                          {formatRublesFromKopecks(item.price * item.quantity)}
+                        </span>
+                      </div>
+                      {extras.map((line) => (
+                        <p key={line} className="text-xs text-gray-500">
+                          {line}
+                        </p>
+                      ))}
+                    </div>
                   </div>
-                  {extras.map((line) => (
-                    <p key={line} className="text-xs text-gray-500 pl-1">
-                      {line}
-                    </p>
-                  ))}
                 </div>
               );
             })

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { AddToCartButton } from './AddToCartButton';
 import { ProductImage } from './ProductImage';
+import { getCategoryLabel } from '@/lib/product-recommendations';
 import { Product } from '@/types/product';
 
 export function ProductModal({
@@ -63,7 +64,7 @@ export function ProductModal({
 
               <div className="flex flex-col">
                 <p className="text-xs font-medium uppercase tracking-wide text-[#5E4037]/70 mb-2">
-                  {product.category}
+                  {getCategoryLabel(product.category)}
                 </p>
                 <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2 antialiased tracking-tight">
                   {product?.name || 'Название товара'}

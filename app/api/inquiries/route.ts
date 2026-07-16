@@ -36,16 +36,33 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
+    const email = typeof body.email === 'string' ? body.email.trim() : '';
+    const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
+
+    if (!name) {
+      return NextResponse.json({ error: 'Укажите имя' }, { status: 400 });
+    }
+    if (!message) {
+      return NextResponse.json({ error: 'Укажите сообщение' }, { status: 400 });
+    }
+    if (!email && !phone) {
+      return NextResponse.json(
+        { error: 'Укажите телефон или email для связи' },
+        { status: 400 }
+      );
+    }
 
     if (!hasDatabase()) {
       const supabase = getSupabaseAdmin();
       const { data, error } = await supabase
         .from('inquiries')
         .insert({
-          name: body.name,
-          email: body.email || null,
-          phone: body.phone || null,
-          message: body.message,
+          name,
+          email: email || null,
+          phone: phone || null,
+          message,
           status: 'new',
         })
         .select('*')
@@ -59,7 +76,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO inquiries (name, email, phone, message, status)
        VALUES ($1, $2, $3, $4, 'new')
        RETURNING *`,
-      [body.name, body.email || null, body.phone || null, body.message]
+      [name, email || null, phone || null, message]
     );
     return NextResponse.json({ inquiry: rows[0] });
   } catch (error) {

@@ -11,6 +11,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-server';
 import { PICKUP_STORES } from '@/lib/store-locations';
 import { Order } from '@/types/order';
 import { validateOrderAgainstSoftLimits } from '@/lib/limits';
+import {
+  normalizeDeliveryMethod,
+  validateOrderRequestFields,
+} from '@/lib/order-request-validation';
 
 function resolvePickupAddress(pickupStoreId: string | null | undefined): string | null {
   if (!pickupStoreId) return null;
@@ -32,6 +36,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.reason }, { status: 400 });
     }
 
+    const fieldError = validateOrderRequestFields(body as Record<string, unknown>);
+    if (fieldError) {
+      return NextResponse.json({ error: fieldError }, { status: 400 });
+    }
+
+    const deliveryMethod = normalizeDeliveryMethod(body.delivery_method);
+    body.delivery_method = deliveryMethod;
+
     const recipientAddress =
       body.recipient_address?.trim() ||
       [body.street, body.house].filter(Boolean).join(', ') ||
@@ -42,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (!hasDatabase()) {
       const supabase = getSupabaseAdmin();
       const street =
-        body.delivery_method === 'pickup'
+        deliveryMethod === 'pickup'
           ? resolvePickupAddress(body.pickup_store)
           : recipientAddress;
 
@@ -51,10 +63,22 @@ export async function POST(request: NextRequest) {
         .insert({
           customer_name: body.customer_name,
           phone: body.phone,
+          recipient_name: deliveryMethod === 'courier' ? body.recipient_name ?? null : null,
+          recipient_phone: deliveryMethod === 'courier' ? body.recipient_phone ?? null : null,
+          recipient_address: deliveryMethod === 'courier' ? recipientAddress : null,
+          special_wishes: body.special_wishes?.trim() || null,
           street,
-          house: body.delivery_method === 'courier' ? body.house ?? null : null,
-          delivery_method: body.delivery_method,
-          delivery_time: body.delivery_time ?? null,
+          house: deliveryMethod === 'courier' ? body.house ?? null : null,
+          pickup_store: deliveryMethod === 'pickup' ? body.pickup_store ?? null : null,
+          delivery_method: deliveryMethod,
+          delivery_date: deliveryMethod === 'courier' ? body.delivery_date ?? null : null,
+          delivery_time: deliveryMethod === 'courier' ? body.delivery_time ?? null : null,
+          preferred_notify_channel: messenger.preferred_notify_channel ?? null,
+          messenger_contact: messenger.messenger_contact ?? null,
+          telegram_chat_id: messenger.telegram_chat_id ?? null,
+          vk_user_id: messenger.vk_user_id ?? null,
+          whatsapp_phone: messenger.whatsapp_phone ?? null,
+          max_chat_id: messenger.max_chat_id ?? null,
           items: body.items ?? [],
           items_total: body.items_total ?? 0,
           delivery_cost: body.delivery_cost ?? 0,
@@ -77,23 +101,24 @@ export async function POST(request: NextRequest) {
     const { rows } = await query<Order>(
       `INSERT INTO orders (
         customer_name, phone, recipient_name, recipient_phone, recipient_address, special_wishes,
-        street, house, pickup_store, delivery_method, delivery_time,
+        street, house, pickup_store, delivery_method, delivery_date, delivery_time,
         preferred_notify_channel, messenger_contact, telegram_chat_id, vk_user_id, whatsapp_phone, max_chat_id,
         items, items_total, delivery_cost, total, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::jsonb, $19, $20, $21, 'new')
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb, $20, $21, $22, 'new')
       RETURNING *`,
       [
         body.customer_name,
         body.phone,
-        body.recipient_name ?? null,
-        body.recipient_phone ?? null,
-        recipientAddress,
-        body.special_wishes?.trim() || null,
-        body.delivery_method === 'courier' ? recipientAddress : null,
+        deliveryMethod === 'courier' ? body.recipient_name ?? null : null,
+        deliveryMethod === 'courier' ? body.recipient_phone ?? null : null,
+        deliveryMethod === 'courier' ? recipientAddress : null,
+        typeof body.special_wishes === 'string' ? body.special_wishes.trim() || null : null,
+        deliveryMethod === 'courier' ? recipientAddress : null,
         null,
-        body.pickup_store ?? null,
-        body.delivery_method,
-        body.delivery_time ?? null,
+        deliveryMethod === 'pickup' ? body.pickup_store ?? null : null,
+        deliveryMethod,
+        deliveryMethod === 'courier' ? body.delivery_date ?? null : null,
+        deliveryMethod === 'courier' ? body.delivery_time ?? null : null,
         messenger.preferred_notify_channel ?? null,
         messenger.messenger_contact ?? null,
         messenger.telegram_chat_id ?? null,

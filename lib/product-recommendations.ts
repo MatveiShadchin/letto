@@ -1,29 +1,35 @@
 import { Product } from '@/types/product';
 import { getPopularityScore } from '@/lib/product-popularity';
+import { productCategories } from '@/data/products';
 
 /** Какие категории предлагать к товару основной категории */
 const COMPLEMENTARY_CATEGORIES: Record<string, string[]> = {
-  букеты: ['шары', 'игрушки', 'вазы'],
-  монобукеты: ['шары', 'игрушки', 'вазы'],
-  гиганты: ['шары', 'вазы', 'композиции'],
-  композиции: ['шары', 'игрушки', 'вазы'],
-  шары: ['игрушки', 'букеты', 'вазы'],
-  игрушки: ['шары', 'букеты', 'вазы'],
-  вазы: ['букеты', 'композиции', 'монобукеты'],
+  букеты: ['шары', 'игрушки', 'комнатные растения'],
+  монобукеты: ['шары', 'игрушки', 'композиции'],
+  композиции: ['шары', 'игрушки', 'букеты'],
+  'комнатные растения': ['шары', 'игрушки', 'букеты'],
+  шары: ['игрушки', 'букеты', 'композиции'],
+  игрушки: ['шары', 'букеты', 'композиции'],
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  букеты: 'Букеты',
-  монобукеты: 'Монобукеты',
-  гиганты: 'Гиганты',
-  композиции: 'Композиции',
-  шары: 'Шары',
-  игрушки: 'Игрушки',
-  вазы: 'Вазы',
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  productCategories.map((item) => [item.value, item.label])
+);
+
+/** Старые значения категорий → актуальные (для фильтров и ссылок) */
+const CATEGORY_ALIASES: Record<string, string> = {
+  гиганты: 'букеты',
+  вазы: 'композиции',
+  'композиции, корзины с цветами': 'композиции',
 };
+
+export function normalizeCatalogCategory(value: string): string {
+  const key = value.trim().toLowerCase();
+  return CATEGORY_ALIASES[key] ?? key;
+}
 
 function normalizeCategory(value: string): string {
-  return value.trim().toLowerCase();
+  return normalizeCatalogCategory(value);
 }
 
 export function getRecommendationTitle(productCategory: string): string {
@@ -35,7 +41,7 @@ export function getCategoryLabel(category: string): string {
   return CATEGORY_LABELS[key] ?? category;
 }
 
-const BOUQUET_CATEGORIES = ['букеты', 'монобукеты', 'гиганты', 'композиции'];
+const BOUQUET_CATEGORIES = ['букеты', 'монобукеты', 'композиции'];
 
 function isBouquetCategory(category: string): boolean {
   return BOUQUET_CATEGORIES.includes(normalizeCategory(category));
@@ -106,4 +112,9 @@ export function getRecommendedProducts(
   }
 
   return picked.slice(0, limit);
+}
+
+/** Сравнение категории товара с выбранным фильтром (с учётом алиасов) */
+export function categoryMatchesFilter(productCategory: string, filterValue: string): boolean {
+  return normalizeCategory(productCategory) === normalizeCategory(filterValue);
 }

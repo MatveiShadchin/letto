@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Product } from '@/types/product';
-import { categories } from '@/data/products';
+import { productCategories } from '@/data/products';
+import { normalizeCatalogCategory } from '@/lib/product-recommendations';
 import { uploadProductImage } from '@/lib/upload-product-image';
 
 interface ProductFormProps {
@@ -31,7 +32,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const categoryOptions = categories.filter((item) => item.value !== 'all');
+  const categoryOptions = productCategories;
 
   useEffect(() => {
     if (product) {
@@ -40,7 +41,7 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
       setPrice((product.price / 100).toString());
       setImageUrl(product.image_url);
       setImagePreview(product.image_url);
-      setCategory(product.category);
+      setCategory(normalizeCatalogCategory(product.category));
       setStock(product.stock.toString());
       setIsPopular(Boolean(product.is_popular));
       setPopularityScore(String(product.popularity_score ?? 0));

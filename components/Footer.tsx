@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { productCategories } from '@/data/products';
 import { ORDER_PHONES, PICKUP_STORES, VK_URL } from '@/lib/store-locations';
 
 export function Footer() {
@@ -50,26 +51,16 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Категории</h4>
             <ul className="space-y-2">
-              <li>
-                <Link href="/catalog?category=букеты" className="text-gray-300 hover:text-[#F9F5F0]">
-                  Букеты
-                </Link>
-              </li>
-              <li>
-                <Link href="/catalog?category=монобукеты" className="text-gray-300 hover:text-[#F9F5F0]">
-                  Монобукеты
-                </Link>
-              </li>
-              <li>
-                <Link href="/catalog?category=гиганты" className="text-gray-300 hover:text-[#F9F5F0]">
-                  Гиганты
-                </Link>
-              </li>
-              <li>
-                <Link href="/catalog?category=композиции" className="text-gray-300 hover:text-[#F9F5F0]">
-                  Композиции
-                </Link>
-              </li>
+              {productCategories.map((category) => (
+                <li key={category.value}>
+                  <Link
+                    href={`/catalog?category=${encodeURIComponent(category.value)}`}
+                    className="text-gray-300 hover:text-[#F9F5F0]"
+                  >
+                    {category.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

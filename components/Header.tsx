@@ -84,7 +84,7 @@ export function Header() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Мы ВКонтакте"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0077FF] p-2 md:px-2.5 md:py-1.5 text-sm font-semibold text-white hover:bg-[#0066DD] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#5E4037] p-2 md:px-2.5 md:py-1.5 text-sm font-semibold text-white hover:bg-[#4A3329] transition-colors"
             >
               <VkIcon className="h-4 w-4" />
               <span className="hidden md:inline">VK</span>

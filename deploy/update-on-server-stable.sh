@@ -41,6 +41,11 @@ rm -rf "$APP_DIR/.next"
 tar -xzf "$ARCHIVE" -C "$APP_DIR"
 
 SCRIPT_DIR="$APP_DIR/deploy"
+mkdir -p "$SCRIPT_DIR"
+# Инфраструктурные скрипты с /root (могут быть новее, чем в теге stable)
+for f in domains.sh build-app.sh reload-nginx.sh nginx-test-https.conf.template nginx-stable-https.conf.template; do
+  [ -f "/root/$f" ] && cp -f "/root/$f" "$SCRIPT_DIR/$f"
+done
 # shellcheck source=domains.sh
 source "$SCRIPT_DIR/domains.sh"
 

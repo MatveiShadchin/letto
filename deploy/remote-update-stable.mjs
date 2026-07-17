@@ -6,15 +6,27 @@ import { Client } from 'ssh2';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(__dirname, '..');
-const archivePath = path.join(projectRoot, 'letto-clean.tgz');
+const archivePath = path.join(projectRoot, 'letto-stable.tgz');
 
-function packProject() {
-  console.log('Packing TEST archive from git HEAD (latest)...');
+const stableRef = process.env.STABLE_REF?.trim() || 'stable';
+
+function packStable() {
+  console.log(`Packing stable archive from git ref: ${stableRef}`);
   if (fs.existsSync(archivePath)) {
     fs.unlinkSync(archivePath);
   }
 
-  execSync(`git archive --format=tar.gz -o "${archivePath}" HEAD`, {
+  try {
+    execSync(`git rev-parse --verify ${stableRef}^{commit}`, {
+      cwd: projectRoot,
+      stdio: 'pipe',
+    });
+  } catch {
+    console.error(`Git ref "${stableRef}" not found. Run: bash deploy/promote-stable.sh`);
+    process.exit(1);
+  }
+
+  execSync(`git archive --format=tar.gz -o "${archivePath}" ${stableRef}`, {
     cwd: projectRoot,
     stdio: 'inherit',
   });
@@ -23,7 +35,7 @@ function packProject() {
   console.log(`Archive ready: ${archivePath} (${sizeMb} MB)`);
 }
 
-packProject();
+packStable();
 
 const host = '147.45.158.254';
 const username = 'root';
@@ -36,12 +48,16 @@ if (!password) {
 
 const files = [
   {
-    local: path.join(projectRoot, 'letto-clean.tgz'),
-    remote: '/root/letto-clean.tgz',
+    local: archivePath,
+    remote: '/root/letto-stable.tgz',
   },
   {
-    local: path.join(projectRoot, 'deploy', 'update-on-server.sh'),
-    remote: '/root/update-on-server.sh',
+    local: path.join(projectRoot, 'deploy', 'update-on-server-stable.sh'),
+    remote: '/root/update-on-server-stable.sh',
+  },
+  {
+    local: path.join(projectRoot, 'deploy', 'bootstrap-stable-on-server.sh'),
+    remote: '/root/bootstrap-stable-on-server.sh',
   },
   {
     local: path.join(projectRoot, 'deploy', 'build-app.sh'),
@@ -107,37 +123,40 @@ const conn = new Client();
 
 conn
   .on('ready', () => {
-  console.log('SSH connected [TEST / latest deploy]');
+    console.log('SSH connected [STABLE deploy]');
 
-  conn.sftp(async (err, sftp) => {
-    if (err) {
-      conn.end();
-      throw err;
-    }
-
-    try {
-      for (const file of files) {
-        console.log(`Uploading ${path.basename(file.local)}...`);
-        await uploadFile(sftp, file.local, file.remote);
+    conn.sftp(async (err, sftp) => {
+      if (err) {
+        conn.end();
+        throw err;
       }
 
-      console.log('Running test update on server...');
-      await execCommand(
-        conn,
-        'chmod +x /root/update-on-server.sh /root/build-app.sh /root/reload-nginx.sh && ' +
-          'cp /root/domains.sh /root/nginx-*.template /var/www/letto/deploy/ 2>/dev/null || true && ' +
-          'cp /root/build-app.sh /root/reload-nginx.sh /var/www/letto/deploy/ 2>/dev/null || true && ' +
-          'bash /root/update-on-server.sh /root/letto-clean.tgz'
-      );
+      try {
+        for (const file of files) {
+          console.log(`Uploading ${path.basename(file.local)}...`);
+          await uploadFile(sftp, file.local, file.remote);
+        }
 
-      console.log('Test deploy finished → https://testletto.ru');
-      conn.end();
-    } catch (error) {
-      conn.end();
-      throw error;
-    }
-  });
-})
+        console.log('Running stable update on server...');
+        await execCommand(
+          conn,
+          'chmod +x /root/update-on-server-stable.sh /root/bootstrap-stable-on-server.sh /root/build-app.sh /root/reload-nginx.sh && ' +
+            'mkdir -p /var/www/letto-stable/deploy && ' +
+            'cp /root/domains.sh /root/nginx-*.template /var/www/letto-stable/deploy/ 2>/dev/null || true && ' +
+            'cp /root/build-app.sh /root/reload-nginx.sh /var/www/letto-stable/deploy/ 2>/dev/null || true && ' +
+            'cp /root/domains.sh /root/nginx-*.template /var/www/letto/deploy/ 2>/dev/null || true && ' +
+            'cp /root/build-app.sh /root/reload-nginx.sh /var/www/letto/deploy/ 2>/dev/null || true && ' +
+            'bash /root/update-on-server-stable.sh /root/letto-stable.tgz'
+        );
+
+        console.log('Stable deploy finished');
+        conn.end();
+      } catch (error) {
+        conn.end();
+        throw error;
+      }
+    });
+  })
   .on('error', (error) => {
     console.error(error.message);
     process.exit(1);

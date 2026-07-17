@@ -1,5 +1,5 @@
 #!/bin/bash
-# Обновление LETTO без полной переустановки
+# Обновление ТЕСТОВОГО инстанса (последняя версия с main/HEAD)
 # На сервере: bash /root/update-on-server.sh /root/letto-clean.tgz
 
 set -e
@@ -8,6 +8,8 @@ ARCHIVE="${1:-/root/letto-clean.tgz}"
 APP_DIR="/var/www/letto"
 ENV_BACKUP="/root/letto-env-backup"
 UPLOADS_BACKUP="/root/letto-uploads-backup"
+LETTO_TEST_DOMAIN="testletto.ru"
+LETTO_TEST_PORT=3000
 
 if [ ! -f "$ARCHIVE" ]; then
   echo "ОШИБКА: нет архива $ARCHIVE"
@@ -19,7 +21,7 @@ if [ ! -d "$APP_DIR" ]; then
   exit 1
 fi
 
-echo "==> Бэкап .env.local и загруженных фото"
+echo "==> [TEST] Бэкап .env.local и загруженных фото"
 if [ -f "$APP_DIR/.env.local" ]; then
   cp "$APP_DIR/.env.local" "$ENV_BACKUP"
 fi
@@ -28,12 +30,19 @@ if [ -d "$APP_DIR/public/uploads/products" ]; then
   cp -a "$APP_DIR/public/uploads/products/." "$UPLOADS_BACKUP/" 2>/dev/null || true
 fi
 
-echo "==> Распаковка новой версии"
+echo "==> [TEST] Распаковка новой версии"
 rm -rf "$APP_DIR/.next"
 tar -xzf "$ARCHIVE" -C "$APP_DIR"
 
+SCRIPT_DIR="$APP_DIR/deploy"
+# shellcheck source=domains.sh
+source "$SCRIPT_DIR/domains.sh"
+
 if [ -f "$ENV_BACKUP" ]; then
   cp "$ENV_BACKUP" "$APP_DIR/.env.local"
+  if grep -q '^NEXT_PUBLIC_SITE_URL=' "$APP_DIR/.env.local"; then
+    sed -i "s|^NEXT_PUBLIC_SITE_URL=.*|NEXT_PUBLIC_SITE_URL=https://${LETTO_TEST_DOMAIN}|" "$APP_DIR/.env.local"
+  fi
 fi
 
 mkdir -p "$APP_DIR/public/uploads/products"
@@ -44,20 +53,16 @@ fi
 cd "$APP_DIR"
 
 if grep -q '^DATABASE_URL=' .env.local; then
-  echo "==> Миграции PostgreSQL"
+  echo "==> [TEST] Миграции PostgreSQL"
   DATABASE_URL="$(grep '^DATABASE_URL=' .env.local | cut -d= -f2-)"
-  psql "$DATABASE_URL" -f database/migrations/001_reviews_pickup_popularity.sql || true
-  psql "$DATABASE_URL" -f database/migrations/002_order_recipient_fields.sql || true
-  psql "$DATABASE_URL" -f database/migrations/003_messaging_notifications.sql || true
-  psql "$DATABASE_URL" -f database/migrations/004_messenger_contact_label.sql || true
-  psql "$DATABASE_URL" -f database/migrations/005_telegram_sync_state.sql || true
-  psql "$DATABASE_URL" -f database/migrations/006_telegram_support_relay.sql || true
-  psql "$DATABASE_URL" -f database/migrations/007_order_delivery_date.sql || true
-  psql "$DATABASE_URL" -f database/migrations/008_catalog_categories.sql || true
+  for m in database/migrations/*.sql; do
+    psql "$DATABASE_URL" -f "$m" || true
+  done
 fi
 
-echo "==> Сборка и перезапуск"
-bash deploy/start-on-server.sh
+echo "==> [TEST] Сборка и перезапуск"
+bash "$SCRIPT_DIR/build-app.sh" "$APP_DIR" letto "$LETTO_TEST_PORT"
+bash "$SCRIPT_DIR/reload-nginx.sh"
 
 rm -f "$ARCHIVE"
-echo "Готово: http://147.45.158.254"
+echo "Готово [TEST]: https://${LETTO_TEST_DOMAIN}"

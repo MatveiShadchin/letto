@@ -1,21 +1,14 @@
-# HTTP → HTTPS
-server {
-    listen 80;
-    server_name testletto.ru www.testletto.ru 147.45.158.254;
-    return 301 https://testletto.ru$request_uri;
-}
-
+# HTTPS stable (шаблоны: __STABLE_PRIMARY__, __STABLE_PUNYCODE__)
 server {
     listen 443 ssl http2;
-    server_name testletto.ru www.testletto.ru;
+    server_name __STABLE_PRIMARY__ www.__STABLE_PRIMARY__ __STABLE_PUNYCODE__ www.__STABLE_PUNYCODE__;
 
-    ssl_certificate /etc/letsencrypt/live/testletto.ru/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/testletto.ru/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/__STABLE_PRIMARY__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__STABLE_PRIMARY__/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
-
     client_max_body_size 10M;
 
     gzip on;
@@ -23,27 +16,23 @@ server {
     gzip_proxied any;
     gzip_comp_level 5;
     gzip_min_length 256;
-    gzip_types
-        text/plain
-        text/css
-        text/javascript
-        application/javascript
-        application/json
-        application/xml
-        image/svg+xml;
+    gzip_types text/plain text/css text/javascript application/javascript application/json application/xml image/svg+xml;
 
-    if ($host = www.testletto.ru) {
-        return 301 https://testletto.ru$request_uri;
+    if ($host = www.__STABLE_PRIMARY__) {
+        return 301 https://__STABLE_PRIMARY__$request_uri;
+    }
+    if ($host = www.__STABLE_PUNYCODE__) {
+        return 301 https://__STABLE_PUNYCODE__$request_uri;
     }
 
     location /uploads/ {
-        alias /var/www/letto/public/uploads/;
+        alias /var/www/letto-stable/public/uploads/;
         access_log off;
         add_header Cache-Control "public, max-age=86400";
     }
 
     location /_next/static/ {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         add_header Cache-Control "public, max-age=31536000, immutable";
@@ -51,7 +40,7 @@ server {
 
     location / {
         client_max_body_size 10M;
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';

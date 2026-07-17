@@ -1,53 +1,31 @@
 #!/bin/bash
-# Запуск LETTO на VPS после загрузки файлов
-# На сервере: cd /var/www/letto && bash deploy/start-on-server.sh
+# Запуск LETTO на VPS после первой загрузки (тест + при необходимости stable)
+# cd /var/www/letto && bash deploy/start-on-server.sh
 
 set -e
 cd /var/www/letto
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "==> Проверка .env.local"
 if [ ! -f .env.local ]; then
   echo "ОШИБКА: нет /var/www/letto/.env.local"
   exit 1
 fi
 
 if ! grep -q '^DATABASE_URL=' .env.local; then
-  echo "==> DATABASE_URL не найден — ставим PostgreSQL и мигрируем данные"
+  echo "==> DATABASE_URL не найден — PostgreSQL"
   bash deploy/install-postgres-and-migrate.sh
 fi
 
-echo "==> Удаление Windows node_modules и dev-сборки"
-rm -rf node_modules .next
+bash "$SCRIPT_DIR/build-app.sh" /var/www/letto letto 3000
 
-echo "==> Установка зависимостей (Linux)"
-npm ci
-
-echo "==> Сборка"
-npm run build
-
-SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' .env.local 2>/dev/null | cut -d= -f2- | tr -d '\r' || true)
-DOMAIN=$(echo "$SITE_URL" | sed -E 's|https?://||' | cut -d/ -f1)
-
-echo "==> Nginx"
-cp deploy/nginx-letto.conf /etc/nginx/sites-available/letto
-ln -sf /etc/nginx/sites-available/letto /etc/nginx/sites-enabled/letto
-rm -f /etc/nginx/sites-enabled/default
-
-if [ -n "$DOMAIN" ] && [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
-  echo "HTTPS: сертификат ${DOMAIN} найден"
-elif [ -n "$DOMAIN" ]; then
-  echo "HTTP-only: сертификат для ${DOMAIN} не найден"
-  sed -i "s/testletto.ru/${DOMAIN}/g" /etc/nginx/sites-available/letto
+if [ -d /var/www/letto-stable ] && [ -f /var/www/letto-stable/.env.local ]; then
+  bash "$SCRIPT_DIR/build-app.sh" /var/www/letto-stable letto-stable 3001
 fi
 
-nginx -t
-systemctl reload nginx
-
-echo "==> PM2"
-pm2 delete letto 2>/dev/null || true
-pm2 start deploy/ecosystem.config.cjs
+bash "$SCRIPT_DIR/reload-nginx.sh"
 pm2 save
+pm2 status
 
 echo ""
-echo "Готово. Откройте: https://testletto.ru"
-pm2 status
+echo "Тест:  https://testletto.ru"
+echo "Stable: https://letto-miass.ru (после DNS + certbot)"

@@ -8,11 +8,7 @@ cd /var/www/letto
 
 bash deploy/install-postgres-and-migrate.sh
 
-cp deploy/nginx-letto.conf /etc/nginx/sites-available/letto
-ln -sf /etc/nginx/sites-available/letto /etc/nginx/sites-enabled/letto
-rm -f /etc/nginx/sites-enabled/default
-nginx -t
-systemctl reload nginx
+bash deploy/reload-nginx.sh
 
 rm -rf node_modules .next
 npm ci

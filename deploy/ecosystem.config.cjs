@@ -13,5 +13,18 @@ module.exports = {
         PORT: 3000,
       },
     },
+    {
+      name: 'letto-stable',
+      cwd: '/var/www/letto-stable',
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start -p 3001',
+      instances: 1,
+      autorestart: true,
+      max_memory_restart: '700M',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3001,
+      },
+    },
   ],
 };

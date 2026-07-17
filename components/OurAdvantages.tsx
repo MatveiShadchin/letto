@@ -1,15 +1,10 @@
-import { Truck, Flower2, Camera, ShieldCheck } from 'lucide-react';
+import { Truck, Camera, ShieldCheck } from 'lucide-react';
 
 export const OurAdvantages = () => {
   const advantages = [
     {
       icon: <Truck className="w-8 h-8 text-[#5E4037]" strokeWidth={1.2} />,
       title: 'Доставка от 60 минут',
-      description: '',
-    },
-    {
-      icon: <Flower2 className="w-8 h-8 text-[#5E4037]" strokeWidth={1.2} />,
-      title: 'Гарантия свежести',
       description: '',
     },
     {
@@ -28,7 +23,7 @@ export const OurAdvantages = () => {
   return (
     <section className="py-16 bg-[#F3F2F1] border-t border-[#F3F2F1]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {advantages.map((item, index) => (
             <div
               key={index}

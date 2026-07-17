@@ -63,8 +63,8 @@ export function CatalogPageClient({
   }, [searchTerm, selectedCategories, selectedPriceRange, sortBy]);
 
   const filteredProducts = useMemo(() => {
-    let filtered = products;
-    const getRubles = (price: number) => price / 100;
+    let filtered = [...products];
+    const getRubles = (price: number) => Number(price) / 100;
 
     if (searchTerm) {
       filtered = filtered.filter(

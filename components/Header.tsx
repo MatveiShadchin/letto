@@ -72,22 +72,24 @@ export function Header() {
 
           <div className="flex items-center space-x-4 md:space-x-5">
             <a
+              href={VK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Мы ВКонтакте"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#5E4037] p-2 md:pl-2 md:pr-3 md:py-1.5 text-sm font-semibold text-white hover:bg-[#4A3329] transition-colors"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
+                <VkIcon className="h-4 w-4" />
+              </span>
+              <span className="hidden md:inline">VK</span>
+            </a>
+
+            <a
               href={HEADER_PHONE.href}
               className="hidden md:flex items-center gap-1.5 text-sm font-medium text-white hover:text-[#F9F5F0] transition-colors"
             >
               <Phone className="h-3.5 w-3.5" />
               {HEADER_PHONE.label}
-            </a>
-
-            <a
-              href={VK_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Мы ВКонтакте"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#5E4037] p-2 md:px-2.5 md:py-1.5 text-sm font-semibold text-white hover:bg-[#4A3329] transition-colors"
-            >
-              <VkIcon className="h-4 w-4" />
-              <span className="hidden md:inline">VK</span>
             </a>
 
             <Link href="/cart" className="relative" aria-label="Корзина">
@@ -126,20 +128,22 @@ export function Header() {
                   ))}
                   <div className="flex flex-col gap-3 pt-4 border-t border-[#3D3D3D]">
                     <a
+                      href={VK_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full bg-[#5E4037] pl-2 pr-4 py-2 text-sm font-semibold text-white hover:bg-[#4A3329] transition-colors w-fit"
+                    >
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
+                        <VkIcon className="h-4 w-4" />
+                      </span>
+                      ВКонтакте
+                    </a>
+                    <a
                       href={HEADER_PHONE.href}
                       className="flex items-center gap-2 text-white hover:text-[#F9F5F0]"
                     >
                       <Phone className="h-4 w-4" />
                       {HEADER_PHONE.label}
-                    </a>
-                    <a
-                      href={VK_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg bg-[#5E4037] px-3 py-2 text-sm font-semibold text-white hover:bg-[#4A3329] transition-colors w-fit"
-                    >
-                      <VkIcon className="h-4 w-4" />
-                      ВКонтакте
                     </a>
                   </div>
                 </nav>

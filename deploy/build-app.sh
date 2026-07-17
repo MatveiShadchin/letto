@@ -20,8 +20,14 @@ rm -rf node_modules .next
 npm ci
 npm run build
 
+# Единый ecosystem с обоими инстансами — всегда из тестового каталога (последняя инфраструктура)
+ECOSYSTEM="/var/www/letto/deploy/ecosystem.config.cjs"
+if [ ! -f "$ECOSYSTEM" ]; then
+  ECOSYSTEM="$APP_DIR/deploy/ecosystem.config.cjs"
+fi
+
 pm2 delete "$PM2_NAME" 2>/dev/null || true
-pm2 start "$APP_DIR/deploy/ecosystem.config.cjs" --only "$PM2_NAME"
+pm2 start "$ECOSYSTEM" --only "$PM2_NAME"
 pm2 save
 
 echo "Готово: $PM2_NAME на порту $PORT"

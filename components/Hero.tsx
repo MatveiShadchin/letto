@@ -34,7 +34,7 @@ export function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
               </Link>
             </div>
 
-            <div className="grid grid-cols-3 gap-6 pt-8">
+            <div className="grid grid-cols-2 gap-6 pt-8">
               <div className="text-center">
                 <div className="text-3xl font-bold text-[#1A1A1A] antialiased tracking-tight">24/7</div>
                 <div className="text-sm text-[#1A1A1A]/80 mt-1 antialiased tracking-tight">Заказы онлайн</div>
@@ -42,10 +42,6 @@ export function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
               <div className="text-center">
                 <div className="text-3xl font-bold text-[#1A1A1A] antialiased tracking-tight">2ч</div>
                 <div className="text-sm text-[#1A1A1A]/80 mt-1 antialiased tracking-tight">Доставка по городу</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-[#1A1A1A] antialiased tracking-tight">100%</div>
-                <div className="text-sm text-[#1A1A1A]/80 mt-1 antialiased tracking-tight">Свежесть цветов</div>
               </div>
             </div>
           </div>

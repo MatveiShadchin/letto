@@ -7,7 +7,7 @@ import { TelegramOrderStatusLink } from '@/components/TelegramOrderStatusLink';
 import { MessengerContactSection, MessengerContactFormValue } from '@/components/MessengerContactSection';
 import { ProductImage } from '@/components/ProductImage';
 import { FloristHoursNotice } from '@/components/FloristHoursNotice';
-import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
+import { PostcardSection } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
 import { apiJson } from '@/lib/api-client';
 import { formatAddonsSummary, hasAddons } from '@/lib/cart-extras';
@@ -25,7 +25,6 @@ import {
 } from '@/lib/florist-hours';
 import { PICKUP_STORES, PickupStoreId } from '@/lib/store-locations';
 import { cn } from '@/lib/utils';
-import { OrderPostcard } from '@/types/product';
 
 export default function CheckoutPage() {
   const { state, clearCart, setOrderPostcard } = useCart();
@@ -108,8 +107,9 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const submitOrder = async (postcardOverride?: OrderPostcard) => {
-    const orderPostcard = postcardOverride ?? state.orderPostcard;
+  const submitOrder = async () => {
+    const postcardText = state.orderPostcard?.text?.trim() ?? '';
+    const wantsPostcard = postcardText.length > 0;
 
     try {
       setSubmitting(true);
@@ -143,8 +143,8 @@ export default function CheckoutPage() {
             quantity: item.quantity,
             price: item.price,
             image_url: item.image_url,
-            postcardWanted: orderPostcard?.wanted ?? false,
-            postcardText: orderPostcard?.wanted ? orderPostcard.text : '',
+            postcardWanted: wantsPostcard,
+            postcardText: wantsPostcard ? postcardText : '',
             addons: item.addons,
           })),
           items_total: state.total,
@@ -211,15 +211,6 @@ export default function CheckoutPage() {
         setError('Выберите время доставки');
         return;
       }
-    }
-
-    if (!isPostcardValid(state.orderPostcard)) {
-      if (state.orderPostcard?.wanted) {
-        setError('Укажите текст на открытке');
-      } else {
-        setError('Выберите, нужна ли открытка к букету');
-      }
-      return;
     }
 
     const contactValue =

@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CartRecommendations } from '@/components/CartRecommendations';
 import { FloristHoursNotice } from '@/components/FloristHoursNotice';
-import { PostcardSection, isPostcardValid } from '@/components/PostcardSection';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/link';
 import { ProductImage } from '@/components/ProductImage';
@@ -14,23 +12,8 @@ import { formatCourierDeliveryHint } from '@/lib/delivery';
 
 export default function CartPage() {
   const router = useRouter();
-  const { state, removeFromCart, updateQuantity, clearCart, setOrderPostcard } = useCart();
-  const [postcardError, setPostcardError] = useState<string | null>(null);
+  const { state, removeFromCart, updateQuantity, clearCart } = useCart();
   const deliveryHint = formatCourierDeliveryHint(state.total);
-
-  const handleCheckout = () => {
-    if (!isPostcardValid(state.orderPostcard)) {
-      if (state.orderPostcard?.wanted) {
-        setPostcardError('Укажите текст на открытке');
-      } else {
-        setPostcardError('Выберите, нужна ли открытка к букету');
-      }
-      return;
-    }
-
-    setPostcardError(null);
-    router.push('/checkout');
-  };
 
   if (state.items.length === 0) {
     return (
@@ -123,19 +106,6 @@ export default function CartPage() {
 
               <CartRecommendations />
 
-              <PostcardSection
-                className="mt-6"
-                value={state.orderPostcard}
-                onChange={(postcard) => {
-                  setPostcardError(null);
-                  setOrderPostcard(postcard);
-                }}
-              />
-
-              {postcardError && (
-                <p className="mt-3 text-sm text-red-600">{postcardError}</p>
-              )}
-
               <div className="mt-6 pt-6 border-t border-[#F3F2F1]">
                 <Button
                   variant="outline"
@@ -167,11 +137,6 @@ export default function CartPage() {
                     <span className="text-[#1A1A1A]">К оплате</span>
                     <span className="text-[#5E4037]">{(state.total / 100).toFixed(0)} ₽</span>
                   </div>
-                  {state.orderPostcard?.wanted && (
-                    <p className="text-xs text-[#5E4037]/85 mt-2">
-                      Открытка: «{state.orderPostcard.text}»
-                    </p>
-                  )}
                   <p className="text-xs text-[#1A1A1A]/50 mt-2">
                     Итог с доставкой рассчитается при оформлении
                   </p>
@@ -181,7 +146,7 @@ export default function CartPage() {
               <Button
                 variant="brand"
                 className="w-full rounded-xl mb-4"
-                onClick={handleCheckout}
+                onClick={() => router.push('/checkout')}
               >
                 Перейти к оформлению
               </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { VkOrderStatusLink } from '@/components/VkOrderStatusLink';
 import { TelegramOrderStatusLink } from '@/components/TelegramOrderStatusLink';
@@ -18,10 +18,9 @@ import {
 } from '@/lib/delivery';
 import { validateMessengerContactInput } from '@/lib/messenger-contact';
 import {
+  DELIVERY_TIME_SLOTS,
   formatFloristProcessingNote,
-  getAvailableDeliverySlots,
-  getEarliestDeliveryDateKey,
-  getLatestDeliveryDateKey,
+  parseFlexibleDeliveryDate,
 } from '@/lib/florist-hours';
 import { PICKUP_STORES, PickupStoreId } from '@/lib/store-locations';
 import { cn } from '@/lib/utils';
@@ -37,7 +36,7 @@ export default function CheckoutPage() {
     recipientName: '',
     recipientPhone: '',
     recipientAddress: '',
-    deliveryDate: getEarliestDeliveryDateKey(),
+    deliveryDate: '',
     deliveryTime: '',
     specialWishes: '',
   });
@@ -49,53 +48,11 @@ export default function CheckoutPage() {
   const [placedMessengerChannel, setPlacedMessengerChannel] =
     useState<MessengerContactFormValue['channel']>('phone');
   const [placedDeliveryMethod, setPlacedDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
-  const [minDeliveryDate, setMinDeliveryDate] = useState(() => getEarliestDeliveryDateKey());
-  const [maxDeliveryDate, setMaxDeliveryDate] = useState(() => getLatestDeliveryDateKey());
-  const [deliverySlots, setDeliverySlots] = useState(() =>
-    getAvailableDeliverySlots(getEarliestDeliveryDateKey())
-  );
   const [messengerContact, setMessengerContact] = useState<MessengerContactFormValue>({
     channel: 'phone',
     contact: '',
     useCustomerPhoneForWhatsapp: true,
   });
-
-  const timeSlots = useMemo(() => deliverySlots.map((slot) => slot.value), [deliverySlots]);
-
-  useEffect(() => {
-    const refreshWindow = () => {
-      const earliest = getEarliestDeliveryDateKey();
-      const latest = getLatestDeliveryDateKey();
-      setMinDeliveryDate(earliest);
-      setMaxDeliveryDate(latest);
-      setFormData((prev) => {
-        const nextDate =
-          !prev.deliveryDate || prev.deliveryDate < earliest || prev.deliveryDate > latest
-            ? earliest
-            : prev.deliveryDate;
-        return nextDate === prev.deliveryDate ? prev : { ...prev, deliveryDate: nextDate };
-      });
-    };
-
-    refreshWindow();
-    const timer = window.setInterval(refreshWindow, 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const refreshSlots = () => {
-      setDeliverySlots(getAvailableDeliverySlots(formData.deliveryDate));
-    };
-    refreshSlots();
-    const timer = window.setInterval(refreshSlots, 60_000);
-    return () => window.clearInterval(timer);
-  }, [formData.deliveryDate]);
-
-  useEffect(() => {
-    if (formData.deliveryTime && !timeSlots.includes(formData.deliveryTime)) {
-      setFormData((prev) => ({ ...prev, deliveryTime: '' }));
-    }
-  }, [formData.deliveryTime, timeSlots]);
 
   const deliveryCostRub = calcDeliveryCostRubles(state.total, deliveryMethod);
   const itemsTotal = state.total / 100;
@@ -135,7 +92,10 @@ export default function CheckoutPage() {
           special_wishes: formData.specialWishes.trim() || null,
           pickup_store: deliveryMethod === 'pickup' ? pickupStoreId : null,
           delivery_method: deliveryMethod,
-          delivery_date: deliveryMethod === 'courier' ? formData.deliveryDate : null,
+          delivery_date:
+            deliveryMethod === 'courier'
+              ? parseFlexibleDeliveryDate(formData.deliveryDate)
+              : null,
           delivery_time: deliveryMethod === 'courier' ? formData.deliveryTime : null,
           items: state.items.map((item) => ({
             id: item.id,
@@ -203,8 +163,12 @@ export default function CheckoutPage() {
         setError('Укажите адрес доставки');
         return;
       }
-      if (!formData.deliveryDate) {
-        setError('Выберите дату доставки');
+      if (!formData.deliveryDate.trim()) {
+        setError('Укажите дату доставки');
+        return;
+      }
+      if (!parseFlexibleDeliveryDate(formData.deliveryDate)) {
+        setError('Укажите дату в формате ДД.ММ.ГГГГ');
         return;
       }
       if (!formData.deliveryTime) {
@@ -496,16 +460,18 @@ export default function CheckoutPage() {
                         Дата доставки *
                       </label>
                       <input
-                        type="date"
+                        type="text"
+                        inputMode="numeric"
                         id="deliveryDate"
                         name="deliveryDate"
                         value={formData.deliveryDate}
-                        min={minDeliveryDate}
-                        max={maxDeliveryDate}
                         onChange={handleInputChange}
                         required
+                        placeholder="ДД.ММ.ГГГГ"
+                        autoComplete="off"
                         className="w-full rounded-xl border border-[#E8E4E0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5E4037]"
                       />
+                      <p className="mt-1.5 text-xs text-[#1A1A1A]/55">Например: 18.07.2026</p>
                     </div>
                     <div>
                       <label
@@ -523,17 +489,12 @@ export default function CheckoutPage() {
                         className="w-full rounded-xl border border-[#E8E4E0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5E4037]"
                       >
                         <option value="">Выберите время</option>
-                        {deliverySlots.map((slot) => (
-                          <option key={slot.value} value={slot.value}>
-                            {slot.label}
+                        {DELIVERY_TIME_SLOTS.map((slot) => (
+                          <option key={slot} value={slot}>
+                            {slot}
                           </option>
                         ))}
                       </select>
-                      {deliverySlots.length === 0 && (
-                        <p className="mt-2 text-sm text-[#8A6A5A]">
-                          На эту дату свободных интервалов нет — выберите другую дату.
-                        </p>
-                      )}
                     </div>
                   </div>
                 </div>

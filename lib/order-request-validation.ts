@@ -1,8 +1,6 @@
 import {
   DELIVERY_TIME_SLOTS,
-  getAvailableDeliverySlots,
-  getEarliestDeliveryDateKey,
-  getLatestDeliveryDateKey,
+  parseFlexibleDeliveryDate,
 } from '@/lib/florist-hours';
 import { PICKUP_STORES } from '@/lib/store-locations';
 
@@ -38,24 +36,21 @@ export function validateOrderRequestFields(body: Record<string, unknown>): strin
     [asTrimmedString(body.street), asTrimmedString(body.house)].filter(Boolean).join(', ');
   if (!address) return 'Укажите адрес доставки';
 
-  const deliveryDate = asTrimmedString(body.delivery_date);
+  const deliveryDateRaw = asTrimmedString(body.delivery_date);
   const deliveryTime = asTrimmedString(body.delivery_time);
-  if (!deliveryDate) return 'Выберите дату доставки';
+  if (!deliveryDateRaw) return 'Укажите дату доставки';
   if (!deliveryTime) return 'Выберите время доставки';
 
-  const minDate = getEarliestDeliveryDateKey();
-  const maxDate = getLatestDeliveryDateKey();
-  if (deliveryDate < minDate || deliveryDate > maxDate) {
-    return 'Выберите доступную дату доставки';
+  const deliveryDate = parseFlexibleDeliveryDate(deliveryDateRaw);
+  if (!deliveryDate) {
+    return 'Укажите дату в формате ДД.ММ.ГГГГ';
   }
+
+  // Нормализуем дату в ISO для дальнейшей записи в БД
+  body.delivery_date = deliveryDate;
 
   if (!(DELIVERY_TIME_SLOTS as readonly string[]).includes(deliveryTime)) {
     return 'Выберите корректный интервал доставки';
-  }
-
-  const slots = getAvailableDeliverySlots(deliveryDate);
-  if (!slots.some((slot) => slot.value === deliveryTime)) {
-    return 'Выбранный интервал недоступен на эту дату';
   }
 
   return null;

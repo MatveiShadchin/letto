@@ -6,6 +6,7 @@ export const STORE_TIMEZONE =
   process.env.NEXT_PUBLIC_STORE_TIMEZONE?.trim() || 'Asia/Yekaterinburg';
 
 export const DELIVERY_TIME_SLOTS = [
+  '8:30-10:00',
   '10:00-12:00',
   '12:00-14:00',
   '14:00-16:00',
@@ -75,6 +76,31 @@ export function formatDeliveryDateRu(dateKey: string | null | undefined): string
   const match = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return dateKey;
   return `${match[3]}.${match[2]}.${match[1]}`;
+}
+
+/**
+ * Разбор даты, которую клиент набрал вручную.
+ * Поддерживает ДД.ММ.ГГГГ, ДД.ММ.ГГ, ГГГГ-ММ-ДД.
+ * Возвращает YYYY-MM-DD или null.
+ */
+export function parseFlexibleDeliveryDate(value: string | null | undefined): string | null {
+  const raw = (value ?? '').trim();
+  if (!raw) return null;
+
+  const dotted = raw.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2}|\d{4})$/);
+  if (dotted) {
+    const day = Number(dotted[1]);
+    const month = Number(dotted[2]);
+    let year = Number(dotted[3]);
+    if (dotted[3].length === 2) {
+      year += year >= 70 ? 1900 : 2000;
+    }
+    const dateKey = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return isValidDateKey(dateKey) ? dateKey : null;
+  }
+
+  if (isValidDateKey(raw)) return raw;
+  return null;
 }
 
 function isValidDateKey(dateKey: string): boolean {

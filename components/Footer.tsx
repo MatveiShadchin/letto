@@ -36,6 +36,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/delivery" className="text-gray-300 hover:text-[#F9F5F0]">
+                  Доставка, оплата
+                </Link>
+              </li>
+              <li>
                 <Link href="/reviews" className="text-gray-300 hover:text-[#F9F5F0]">
                   Отзывы
                 </Link>

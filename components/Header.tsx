@@ -7,6 +7,7 @@ import { ShoppingCart, Phone, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
@@ -28,6 +29,7 @@ export function Header() {
   const navigation = [
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' },
+    { name: 'Доставка, оплата', href: '/delivery' },
     { name: 'Отзывы', href: '/reviews' },
     { name: 'Контакты', href: '/contacts' },
   ];
@@ -118,22 +120,23 @@ export function Header() {
               <SheetContent side="right" className="bg-[#2D2D2D] text-white">
                 <nav className="flex flex-col space-y-4 mt-8">
                   {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="text-lg hover:text-[#F9F5F0] transition-colors antialiased tracking-tight text-white"
-                    >
-                      {item.name}
-                    </Link>
+                    <SheetClose asChild key={item.name}>
+                      <Link
+                        href={item.href}
+                        className="text-lg hover:text-[#F9F5F0] transition-colors antialiased tracking-tight text-white"
+                      >
+                        {item.name}
+                      </Link>
+                    </SheetClose>
                   ))}
                   <div className="flex flex-col gap-3 pt-4 border-t border-[#3D3D3D]">
                     <a
                       href={VK_URL}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full bg-[#5E4037] pl-2 pr-4 py-2 text-sm font-semibold text-white hover:bg-[#4A3329] transition-colors w-fit"
+                      className="inline-flex items-center gap-2 !rounded-full bg-[#5E4037] pl-2.5 pr-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4A3329] transition-colors w-fit overflow-hidden"
                     >
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center !rounded-full bg-white/15">
                         <VkIcon className="h-4 w-4" />
                       </span>
                       ВКонтакте

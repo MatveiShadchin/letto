@@ -36,8 +36,10 @@ export function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
 
             <div className="grid grid-cols-3 gap-6 pt-8">
               <div className="text-center">
-                <div className="text-3xl font-bold text-[#1A1A1A] antialiased tracking-tight">24/7</div>
-                <div className="text-sm text-[#1A1A1A]/80 mt-1 antialiased tracking-tight">Заказы онлайн</div>
+                <div className="text-xl sm:text-2xl font-bold text-[#1A1A1A] antialiased tracking-tight leading-tight">
+                  Открытка
+                </div>
+                <div className="text-sm text-[#1A1A1A]/80 mt-1 antialiased tracking-tight">в подарок</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-[#1A1A1A] antialiased tracking-tight">2ч</div>
@@ -53,7 +55,7 @@ export function Hero({ featuredProduct }: { featuredProduct: Product | null }) {
           <div className="relative">
             <div className="relative rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.05)] bg-white p-6">
               {featuredProduct ? (
-                <ProductCard product={featuredProduct} priority />
+                <ProductCard product={featuredProduct} priority detailsBeforeCart />
               ) : (
                 <div className="h-[400px] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-[#F3F2F1] rounded-xl">
                   <div className="text-[#1A1A1A]/40 mb-4 antialiased">Товар дня не назначен</div>

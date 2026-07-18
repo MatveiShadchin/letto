@@ -37,10 +37,9 @@ export function FloristHoursNotice({
         <div>
           <p className="font-semibold">{info.title}</p>
           <p className="mt-1 text-sm leading-relaxed opacity-90">{info.message}</p>
-          <p className="mt-2 text-xs opacity-75">
-            Сбор букетов: {info.workingHoursLabel}
-            {mode !== 'courier' && ` · Самовывоз: ${info.pickupHoursLabel}`}
-          </p>
+          {mode !== 'courier' ? (
+            <p className="mt-2 text-xs opacity-75">Самовывоз: {info.pickupHoursLabel}</p>
+          ) : null}
         </div>
       </div>
     </div>

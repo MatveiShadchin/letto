@@ -44,13 +44,6 @@ export default function ContactsPage() {
                     <p className="text-[#1A1A1A]/80">Круглосуточно</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 mt-0.5 flex-shrink-0 text-[#5E4037]" />
-                  <div>
-                    <p className="font-medium text-[#1A1A1A]">Сбор заказов флористами</p>
-                    <p className="text-[#1A1A1A]/80">Ежедневно с 8:00 до 20:00</p>
-                  </div>
-                </div>
               </div>
             </Card>
           );

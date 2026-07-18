@@ -10,9 +10,12 @@ import { Product } from '@/types/product';
 export function ProductCard({
   product,
   priority = false,
+  detailsBeforeCart = false,
 }: {
   product: Product;
   priority?: boolean;
+  /** «В корзину» только внутри модалки после «Подробнее» */
+  detailsBeforeCart?: boolean;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -43,15 +46,21 @@ export function ProductCard({
 
           <div className="mt-auto px-1">
             <div className="flex gap-2">
-              <AddToCartButton
-                product={product}
-                className="flex-1 h-10 rounded-xl font-medium tracking-tight antialiased text-sm"
-              />
+              {!detailsBeforeCart ? (
+                <AddToCartButton
+                  product={product}
+                  className="flex-1 h-10 rounded-xl font-medium tracking-tight antialiased text-sm"
+                />
+              ) : null}
 
               <Button
                 onClick={() => setIsModalOpen(true)}
-                variant="outline"
-                className="flex-1 h-10 border-[#1A1A1A]/20 text-[#1A1A1A] hover:bg-[#F3F2F1] rounded-xl font-medium tracking-tight antialiased text-sm"
+                variant={detailsBeforeCart ? 'brand' : 'outline'}
+                className={
+                  detailsBeforeCart
+                    ? 'flex-1 h-10 rounded-xl font-medium tracking-tight antialiased text-sm'
+                    : 'flex-1 h-10 border-[#1A1A1A]/20 text-[#1A1A1A] hover:bg-[#F3F2F1] rounded-xl font-medium tracking-tight antialiased text-sm'
+                }
               >
                 Подробнее
               </Button>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { OrderPostcard } from '@/types/product';
@@ -12,42 +11,25 @@ interface PostcardSectionProps {
   className?: string;
 }
 
+/** Опциональная открытка: если поле заполнено — будет открытка, иначе нет. */
 export function PostcardSection({ value, onChange, className }: PostcardSectionProps) {
-  const [wantsPostcard, setWantsPostcard] = useState<boolean | null>(
-    value === null ? null : value.wanted
-  );
   const [postcardText, setPostcardText] = useState(value?.text ?? '');
 
   useEffect(() => {
-    if (value === null) return;
-    setWantsPostcard(value.wanted);
+    if (value === null) {
+      setPostcardText('');
+      return;
+    }
     setPostcardText(value.text);
   }, [value]);
 
-  const selectNo = () => {
-    setWantsPostcard(false);
-    setPostcardText('');
-    onChange({ wanted: false, text: '' });
-  };
-
-  const selectYes = () => {
-    setWantsPostcard(true);
-    onChange({ wanted: true, text: postcardText.trim() });
-  };
-
-  const updateText = (text: string) => {
-    setPostcardText(text);
-    if (wantsPostcard) {
-      onChange({ wanted: true, text });
-    }
-  };
-
-  const commitText = () => {
-    const trimmed = postcardText.trim();
-    setPostcardText(trimmed);
-    if (wantsPostcard) {
-      onChange({ wanted: true, text: trimmed });
-    }
+  const emit = (text: string) => {
+    const trimmed = text.trim();
+    onChange(
+      trimmed
+        ? { wanted: true, text: trimmed }
+        : { wanted: false, text: '' }
+    );
   };
 
   return (
@@ -59,55 +41,34 @@ export function PostcardSection({ value, onChange, className }: PostcardSectionP
     >
       <h3 className="text-base font-semibold text-[#1A1A1A] mb-1">Бесплатная открытка</h3>
       <p className="text-sm text-[#1A1A1A]/70 mb-4">
-        Добавим открытку к букету — напишем ваш текст от руки
+        Необязательно. Если напишете текст — добавим открытку к букету от руки
       </p>
 
-      <div className="flex gap-3">
-        <Button
-          type="button"
-          variant={wantsPostcard === true ? 'brand' : 'outline'}
-          className={cn(
-            'flex-1 rounded-xl',
-            wantsPostcard !== true && 'border-[#E8E4E0] bg-white text-[#1A1A1A] hover:bg-white'
-          )}
-          onClick={selectYes}
-        >
-          Да, хочу
-        </Button>
-        <Button
-          type="button"
-          variant={wantsPostcard === false ? 'brand' : 'outline'}
-          className={cn(
-            'flex-1 rounded-xl',
-            wantsPostcard !== false && 'border-[#E8E4E0] bg-white text-[#1A1A1A] hover:bg-white'
-          )}
-          onClick={selectNo}
-        >
-          Нет, спасибо
-        </Button>
+      <div className="space-y-2">
+        <label htmlFor="postcard-text" className="text-sm font-medium text-[#1A1A1A]">
+          Текст на открытке
+        </label>
+        <Textarea
+          id="postcard-text"
+          value={postcardText}
+          onChange={(e) => {
+            setPostcardText(e.target.value);
+            emit(e.target.value);
+          }}
+          onBlur={() => {
+            const trimmed = postcardText.trim();
+            setPostcardText(trimmed);
+            emit(trimmed);
+          }}
+          placeholder="Например: С днём рождения, любимая!"
+          className="min-h-[100px] rounded-xl border-[#E8E4E0] bg-white text-[#1A1A1A] focus-visible:ring-[#5E4037]"
+        />
       </div>
-
-      {wantsPostcard === true && (
-        <div className="mt-4 space-y-2">
-          <label htmlFor="postcard-text" className="text-sm font-medium text-[#1A1A1A]">
-            Текст на открытке *
-          </label>
-          <Textarea
-            id="postcard-text"
-            value={postcardText}
-            onChange={(e) => updateText(e.target.value)}
-            onBlur={commitText}
-            placeholder="Например: С днём рождения, любимая!"
-            className="min-h-[100px] rounded-xl border-[#E8E4E0] bg-white text-[#1A1A1A] focus-visible:ring-[#5E4037]"
-          />
-        </div>
-      )}
     </div>
   );
 }
 
-export function isPostcardValid(postcard: OrderPostcard | null): boolean {
-  if (postcard === null) return false;
-  if (!postcard.wanted) return true;
-  return postcard.text.trim().length > 0;
+/** Открытка опциональна — пустое поле допустимо. */
+export function isPostcardValid(_postcard: OrderPostcard | null): boolean {
+  return true;
 }
